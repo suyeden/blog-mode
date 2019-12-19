@@ -48,13 +48,13 @@
   (let (selectfile (time 0))
     ;; return-key を押した対象項目を記録
     (re-search-backward "^\\([*0-9]+\\) \\(.?\\)$")     ; 今 *nikki-list*
-    (setq selectfile (buffer-substring (match-beginning 2) (match-end 2)))     ; 選択した項目を記録
-    (set-buffer "* work*")
-    (point-min)     ; 今後の検索のための準備
+    (setq selectfile (buffer-substring (match-beginning 2) (match-end 2)))
     ;; return-key を押した項目が * か 数字 かで条件分岐
     (if (string= "*" (buffer-substring (match-beginning 1) (match-end 1)))
         ;; return-key を押した項目が * のとき
         (progn
+          (set-buffer "* work*")
+          (point-min)
           (search-forward (format "%s" selectfile))     ; return-key を押した項目へ移動（今 * work*）
           ;; 1つ下の層の項目の始まりが * か - かを調べる
           (setq time (1+ time))
