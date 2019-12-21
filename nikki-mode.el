@@ -19,11 +19,13 @@
 (defun nikki ()
   "nikki-mode の本体を定義していく"
   (interactive)
+  (defvar my-indent-time)     ; index.txt の行の先頭の空白数を保持
+  (setq my-indent-time 0)
   ;; * work* に nikki ディレクトリ内の index.txt の内容を書き込む
   (get-buffer-create "* work*")
   (set-buffer "* work*")
   (erase-buffer)
-  (insert-file-contents "c:/home/nikki/index.txt")
+  (insert-file-contents "~/nikki/index.txt")
   ;; *nikki-list* に（先頭）* ...（末尾）の行を書き込む
   (get-buffer-create "*nikki-list*")
   (set-buffer "*nikki-list*")
@@ -43,12 +45,11 @@
 
 ;;; ここから nikki-mode に必要な関数群
 
-(defvar my-indent-time nil "index.txt の行の先頭の空白数を保持")
-(setq my-indent-time 0)
-
 (defun nikki-select ()
   "x を押したときの挙動"
   (interactive)
+  ;; for debug!
+  (message (format "%d" my-indent-time))
   (let (selectfile)
     ;; x を押した対象項目を記録
     (forward-line 1)
@@ -58,7 +59,7 @@
     (if (string= "*" (buffer-substring (match-beginning 1) (match-end 1)))
         ;; x を押した項目が * のとき
         (progn
-          ; set-buffer!
+          ;; for debug!
           (switch-to-buffer "* work*")
           (goto-char (point-min))
           (re-search-forward (format "%s" selectfile) nil t)     ; x を押した項目へ移動（今 * work*）
@@ -77,11 +78,15 @@
                    (progn (re-search-forward (format "^ \\{%d\\}\\* .+$" (1- my-indent-time)) nil t) (forward-line -1) (end-of-line) (point)))     ; * work*
                   ;; * から始まる行を検索して *nikki-list* に書き込む
                   (goto-char (point-min))
+                  (set-buffer "*nikki-list*")     ; *nikki-list* 更新前の準備
+                  (erase-buffer)
+                  (set-buffer "* work*")
                   (while (re-search-forward (format "^ \\{%d\\}\\(* .+\\)$" my-indent-time) nil t)
                     (setq selectfile (buffer-substring (match-beginning 1) (match-end 1)))
                     (switch-to-buffer "*nikki-list*")
-                    (erase-buffer)
-                    (insert (format "%s\n" selectfile)))))
+                    (insert (format "%s\n" selectfile))
+                    ;; for debug!
+                    (switch-to-buffer "* work*"))))
             ;; 1つ下の層の項目の始まりが - のとき
             ;; 検索範囲を狭めてから
             (beginning-of-line)
@@ -99,14 +104,20 @@
               ;; - から始まる行を検索して *nikki-list* に書き込む
               (let ((number 1))
                 (goto-char (point-min))
+                (set-buffer "*nikki-list*")     ; *nikki-list* 更新前の準備
+                (erase-buffer)
+                (set-buffer "* work*")
                 (while (re-search-forward (format "^ \\{%d\\}- \\(.+\\) / [0-9]+/[0-9]+/[0-9]+(.)[ :0-9]+$" my-indent-time) nil t)     ; * work*
                   (setq selectfile (buffer-substring (match-beginning 1) (match-end 1)))
                   (switch-to-buffer "*nikki-list*")
-                  (erase-buffer)
-                  (insert (format "%d. %s\n" number selectfile)))))))
+                  (insert (format "%d. %s\n" number selectfile))
+                  ;; for debug!
+                  (switch-to-buffer "* work*")))))
+          (switch-to-buffer "*nikki-list*")
+          (goto-char (point-min)))
       ;; x を押した項目が 数字 のとき
       (get-buffer-create "*full-nikki*")
       (switch-to-buffer "*full-nikki*")
       (goto-char (point-min))
-      (toggle-read-only)
-      (insert-file-contents (format "c:/home/nikki/%s.txt" selectfile)))))
+      (insert-file-contents (format "~/nikki/%s.txt" selectfile))
+      (toggle-read-only))))
