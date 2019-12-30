@@ -15,7 +15,7 @@
 (define-key nikki-mode-map "\C-cf" 'nikki-fix)
 (define-key nikki-mode-map "\C-h" 'nikki-help)
 
-;;; メイン関数
+;;; 最初に実行される関数
 (defun nikki ()
   "nikki-mode の本体を定義していく"
   (interactive)
@@ -28,7 +28,7 @@
   (insert-file-contents "~/nikki/index.txt")
   ;; *nikki-list* に（先頭）* ...（末尾）の行を書き込む
   (get-buffer-create "*nikki-list*")
-  (set-buffer "*nikki-list*")
+  (switch-to-buffer "*nikki-list*")
   (erase-buffer)
   (save-excursion
     (let (nikkilist)
@@ -38,6 +38,7 @@
         (switch-to-buffer "*nikki-list*")
         (insert (format "%s\n" nikkilist))
         (set-buffer "* work*"))))
+  (toggle-read-only)
   (nikki-heading)
   ;; 使用するマップの定義
   (use-local-map nikki-mode-map)
@@ -52,6 +53,7 @@
   ;; for debug!
   (message (format "%d" my-indent-time))
   (let (selectfile)
+    ;; *full-nikki* バッファのときは適用しない
     (if (string= "*full-nikki*" (format "%s" (current-buffer)))
         nil
       ;; x を押した対象項目を記録
@@ -62,10 +64,11 @@
       (if (string= "*" (buffer-substring (match-beginning 1) (match-end 1)))
           ;; x を押した項目が * のとき
           (progn
+            ;; x を押した項目へ移動（今 * work*）
             ;; for debug!
             (switch-to-buffer "* work*")
             (goto-char (point-min))
-            (re-search-forward (format "%s" selectfile) nil t)     ; x を押した項目へ移動（今 * work*）
+            (re-search-forward (format "%s" selectfile) nil t)
             ;; 1つ下の層の項目の始まりが * か - かを調べる
             (setq my-indent-time (1+ my-indent-time))
             (re-search-forward (format "^ \\{%d\\}\\([*-]\\) .+$" my-indent-time) nil t)
@@ -73,55 +76,80 @@
             (if (string= "*" (buffer-substring (match-beginning 1) (match-end 1)))
                 ;; 1つ下の層の項目の始まりが * のとき
                 (progn
-                  ;; 検索範囲を狭めてから
-                  (beginning-of-line)
-                  (save-restriction
-                    (narrow-to-region
-                     (point)
-                     (if (re-search-forward (format "^ \\{%d\\}\\* .+$" (1- my-indent-time)) nil t)
-                         (progn
-                           (forward-line -1)
-                           (end-of-line)
-                           (point))
-                       (point-max)))     ; * work*
-                    ;; * から始まる行を検索して *nikki-list* に書き込む
-                    (goto-char (point-min))
-                    (set-buffer "*nikki-list*")     ; *nikki-list* 更新前の準備
-                    (erase-buffer)
-                    (set-buffer "* work*")
-                    (while (re-search-forward (format "^ \\{%d\\}\\(* .+\\)$" my-indent-time) nil t)
-                      (setq selectfile (buffer-substring (match-beginning 1) (match-end 1)))
-                      (switch-to-buffer "*nikki-list*")
-                      (insert (format "%s\n" selectfile))
-                      ;; for debug!
-                      (switch-to-buffer "* work*"))))
+                  ;; 検索範囲を狭めてから(* work*)
+                  (let ((indent-count (1- my-indent-time)))
+                    (beginning-of-line)
+                    (save-restriction
+                      (narrow-to-region
+                       (point)
+                       (if (re-search-forward (format "^ \\{%d\\}\\* .+$" indent-count) nil t)
+                           (progn
+                             (forward-line -1)
+                             (end-of-line)
+                             (point))
+                         (setq indent-count (1- indent-count))
+                         (if (catch 'found
+                               (while (>= indent-count 0)
+                                 (if (re-search-forward (format "^ \\{%d\\}\\* .+$" indent-count) nil t)
+                                     (progn
+                                       (forward-line -1)
+                                       (end-of-line)
+                                       (throw 'found t))
+                                   (setq indent-count (1- indent-count)))))
+                             (point)
+                           (point-max))))     ; narrow-to-region
+                      ;; * から始まる行を検索して *nikki-list* に書き込む
+                      (goto-char (point-min))
+                      (set-buffer "*nikki-list*")     ; *nikki-list* 更新前の準備
+                      (toggle-read-only)
+                      (erase-buffer)
+                      (set-buffer "* work*")
+                      (while (re-search-forward (format "^ \\{%d\\}\\(* .+\\)$" my-indent-time) nil t)
+                        (setq selectfile (buffer-substring (match-beginning 1) (match-end 1)))
+                        (switch-to-buffer "*nikki-list*")
+                        (insert (format "%s\n" selectfile))
+                        ;; for debug!
+                        (switch-to-buffer "* work*")))))     ; progn
               ;; 1つ下の層の項目の始まりが - のとき
               ;; 検索範囲を狭めてから
-              (beginning-of-line)
-              (save-restriction
-                (narrow-to-region
-                 (point)
-                 (if (re-search-forward (format "^ \\{%d\\}\\* .+$" (1- my-indent-time)) nil t)
-                     (progn
-                       (re-search-forward (format "^ \\{%d\\}\\* .+$" (1- my-indent-time)) nil t)
-                       (forward-line -1)
-                       (end-of-line)
-                       (point))
-                   (point-max)))
-                ;; - から始まる行を検索して *nikki-list* に書き込む
-                (let ((number 1))
-                  (goto-char (point-min))
-                  (set-buffer "*nikki-list*")     ; *nikki-list* 更新前の準備
-                  (erase-buffer)
-                  (set-buffer "* work*")
-                  (while (re-search-forward (format "^ \\{%d\\}- \\(.+ / [0-9]+/[0-9]+/[0-9]+(.)[ :0-9]+\\)$" my-indent-time) nil t)     ; * work*
-                    (setq selectfile (buffer-substring (match-beginning 1) (match-end 1)))
-                    (switch-to-buffer "*nikki-list*")
-                    (insert (format "%d. %s\n" number selectfile))
-                    (setq number (1+ number))
-                    (set-buffer "* work*")))))
+              (let ((indent-count (1- my-indent-time)))
+                (beginning-of-line)
+                (save-restriction
+                  (narrow-to-region
+                   (point)
+                   (if (re-search-forward (format "^ \\{%d\\}\\* .+$" indent-count) nil t)
+                       (progn
+                         (forward-line -1)
+                         (end-of-line)
+                         (point))
+                     (setq indent-count (1- indent-count))
+                     (if (catch 'found
+                           (while (>= indent-count 0)
+                             (if (re-search-forward (format "^ \\{%d\\}\\* .+$" indent-count) nil t)
+                                 (progn
+                                   (forward-line -1)
+                                   (end-of-line)
+                                   (throw 'found t))
+                               (setq indent-count (1- indent-count)))))
+                         (point)
+                       (point-max))))     ; narrow-to-region
+                  ;; - から始まる行を検索して *nikki-list* に書き込む
+                  (let ((number 1))
+                    (goto-char (point-min))
+                    (set-buffer "*nikki-list*")     ; *nikki-list* 更新前の準備
+                    (toggle-read-only)
+                    (erase-buffer)
+                    (set-buffer "* work*")
+                    (while (re-search-forward (format "^ \\{%d\\}- \\(.+ / [0-9]+/[0-9]+/[0-9]+(.)[ :0-9]+\\)$" my-indent-time) nil t)     ; * work*
+                      (setq selectfile (buffer-substring (match-beginning 1) (match-end 1)))
+                      ;; for debug!
+                      (switch-to-buffer "*nikki-list*")
+                      (insert (format "%d. %s\n" number selectfile))
+                      (setq number (1+ number))
+                      (set-buffer "* work*"))))))
             (switch-to-buffer "*nikki-list*")
-            (goto-char (point-min)))
+            (goto-char (point-min))
+            (toggle-read-only))
         ;; x を押した項目が 数字 のとき
         (beginning-of-line)
         (re-search-forward "^[.0-9]+ \\(.+\\) / [0-9]+/[0-9]+/[0-9]+(.)[ :0-9]+$" nil t)
@@ -181,3 +209,96 @@
   "arg行戻る"
   (interactive "p")
   (nikki-next (- arg)))
+
+(defun nikki-quit ()
+  "1つ前の画面に戻る"
+  (interactive)
+  (let (current-buffer-word indent-count selectfile current-topic)
+    (if (= (point) (point-max))
+        (forward-line -1)
+      nil)
+    (cond
+     ;; カレントバッファが *nikki-list* かつ my-indent-time が 0 でないとき
+     ((and (/= my-indent-time 0) (string= "*nikki-list*" (format "%s" (current-buffer))))
+      (progn
+        ;; 1つ上の層の先頭の空白数を記録 (my-indent-time を再設定)
+        (setq my-indent-time (1- my-indent-time))
+        ;; 現在のバッファでカーソル上にある項目を設定
+        (save-excursion
+          (beginning-of-line)
+          (re-search-forward "^[.*0-9]+ \\(.+\\)$" nil t)
+          (setq current-buffer-word (buffer-substring (match-beginning 1) (match-end 1))))
+        ;; 記録したら *nikki-list* の内容を削除
+        (toggle-read-only)
+        (erase-buffer)
+        ;; for debug!
+        (switch-to-buffer "* work*")
+        (goto-char (point-min))
+        ;; 再設定した my-indent-time の数値によって場合分け
+        (if (= my-indent-time 0)
+            ;; my-indent-time = 0 (1つ上の層が限界)のとき
+            (progn
+              (save-excursion
+                (re-search-forward (format "%s" current-buffer-word) nil t)
+                (re-search-backward "^\\(\\* .+\\)$" nil t)
+                (setq current-topic (buffer-substring (match-beginning 1) (match-end 1))))
+              (while (re-search-forward "^\\* .+$" nil t)
+                (setq selectfile (buffer-substring (match-beginning 0) (match-end 0)))
+                (switch-to-buffer "*nikki-list*")
+                (insert (format "%s\n" selectfile))
+                ;; for debug!
+                (switch-to-buffer "* work*"))
+              (switch-to-buffer "*nikki-list*"))
+          ;; my-indent-time /= 0 (1つ上の層のさらに上に層がある)のとき
+          ;; 記録した項目へ移動 (* work*)
+          (re-search-forward (format "%s" current-buffer-word) nil t)
+          ;; 検索範囲を狭めて(2つ上の層に挟まれた領域)から1つ上の層の項目を検索
+          (setq indent-count (1- my-indent-time))
+          (re-search-backward (format "^ \\{%d\\}\\(\\* .+\\)$" indent-count) nil t)
+          (setq current-topic (buffer-substring (match-beginning 1) (match-end 1)))
+          (forward-line 1)
+          (beginning-of-line)
+          (save-restriction
+            (narrow-to-region
+             (point)
+             (progn
+               (re-search-forward (format "^ \\{%d\\}\\* .+$" indent-count) nil t)
+               (forward-line -1)
+               (end-of-line)
+               (point)))     ; narrow-to-region
+            (goto-char (point-min))
+            (while (re-search-forward (format "^ \\{%d\\}\\(\\* .+\\)$" my-indent-time) nil t)
+              (setq selectfile (buffer-substring (match-beginning 1) (match-end 1)))
+              (switch-to-buffer "*nikki-list*")
+              (insert (format "%s\n" selectfile))
+              ;; for debug!
+              (switch-to-buffer "* work*"))     ; while
+            (switch-to-buffer "*nikki-list*")))
+        (goto-char (point-min))
+        (re-search-forward (format "%s" current-topic) nil t)
+        (beginning-of-line)
+        (toggle-read-only)
+        (nikki-heading)))     ; cond条件式1
+     ;; カレントバッファが *nikki-list* かつ my-indent-time が 0 (1番最初の画面)のとき
+     ((and (= my-indent-time 0) (string= "*nikki-list*" (format "%s" (current-buffer))))
+      (progn
+        (if (get-buffer "* work*")
+            (kill-buffer "* work*")
+          nil)
+        (if (get-buffer "*nikki-list*")
+            (kill-buffer "*nikki-list*")
+          nil)
+        (if (get-buffer "*nikki-heading*")
+            (kill-buffer "*nikki-heading*")
+          nil)
+        (if (get-buffer "*full-nikki*")
+            (kill-buffer "*full-nikki*")
+          nil)))
+     ;; カレントバッファが *full-nikki* のとき
+     ((string= "*full-nikki*" (format "%s" (current-buffer)))
+      (progn
+        (kill-buffer "*full-nikki*")
+        (switch-to-buffer "*nikki-list*")
+        (beginning-of-line)
+        (nikki-heading)))
+     (t nil))))
