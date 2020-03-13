@@ -1,1 +1,1 @@
-# nikki-mode
+# blog-mode
