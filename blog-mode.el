@@ -4,10 +4,12 @@
 (define-key global-map "\C-cb" 'blog-mode)
 
 ;;; keymap
- (defvar org-mode-map (make-keymap))
+(defvar org-mode-map (make-keymap))
 ;;; define-key
 (define-key org-mode-map "\C-c\C-n" 'new-blog)
-(define-key org-mode-map "\C-ce" 'export-to-html)
+(define-key org-mode-map "\C-ce" 'end-blog)
+(define-key org-mode-map "\C-c\C-h" 'blog-help)
+(define-key org-mode-map "\C-cx" 'all-export-to-html)
 
 ;;; blog-mode (my new major-mode)
 (defun blog-mode ()
@@ -19,19 +21,22 @@
   ;; リンクを開く前のウィンドウを記録
   (defvar my-pre-win)
   (setq my-pre-win (selected-window))
+  ;; org-export-dispatch (org-fileからhtml-fileへの変換) のキーボードマクロ
+  (fset 'auto-export-to-html
+        "\C-c\C-ehh")
+  (delete-other-windows)
   (start-blog)
   ;; define-key
   ;; 1. キーバインドに矢印キーを用いたい -> (local-set-key)
   ;; 2. local-set-key をしたいが、 org-mode に対してキーバインドを追加したい
-  ;; という特殊な理由のため、org-mode が有効になったこのタイミングで設定する
+  ;; という理由のため、org-mode が有効になったこのタイミングで設定する
   (local-set-key (kbd "C-c <C-left>") 'back-page)
-  (local-set-key (kbd "C-c <C-up>") 'show-pre-buff)
   (use-local-map org-mode-map)
   (setq major-mode 'org-mode
         mode-name "Org"))
 
 (defun start-blog ()
-  "blog-mode を開く"
+  "blog-modeを開く"
   (if (file-exists-p "~/org/blog/index.org")
       (progn
         (find-file "~/org/blog/index.org")
@@ -53,8 +58,11 @@
   (interactive)
   (catch 'flag
     (if (string= "index.org" (buffer-name (current-buffer)))
-        (throw 'flag t)
+        (progn
+          (message "if you want to end blog-mode, type 'C-c e' !")
+          (throw 'flag t))
       nil)
+    (export-to-html)
     (kill-buffer (current-buffer))
     (select-window my-pre-win)
     (if (string= "index.org" (buffer-name (current-buffer)))
@@ -119,52 +127,54 @@
             (kill-buffer (current-buffer)))
         nil))))
 
-(defun show-pre-buff ()
-  "blog-mode を開く前のバッファを隣のバッファに表示"
-  (interactive)
-  (pop-to-buffer my-current-buffer))
-
 (defun export-to-html ()
-  "HTMLファイルにまだエクスポートしていないorgファイルを順にエクスポート"
+  "current-buffer の orgファイル を HTMLファイル にエクスポート"
   (interactive)
-  (let (inside-dir testfile orgfile orgfilecopy htmlfile htmlfilecopy orgtestfile htmltestfile readyfile notyetfile deletefile targetfile)
-    (setq inside-dir (directory-files "~/org/blog/" t))
-    (while inside-dir
-      (setq testfile (car inside-dir))
-      (if (string-match "\\.org$" (format "%s" testfile))
-          (setq orgfile (cons testfile orgfile))
-        (if (string-match "\\.html$" (format "%s" testfile))
-            (setq htmlfile (cons testfile htmlfile)))
-        nil)
-      (setq inside-dir (cdr inside-dir)))
-    (setq orgfilecopy orgfile)
-    (setq htmlfilecopy htmlfile)
-    (while orgfile
-      (setq testfile (car orgfile))
-      (string-match "\\(.+\\).org" (format "%s" testfile))
-      (setq orgtestfile (substring (format "%s" testfile) (match-beginning 1) (match-end 1)))
-      (catch 'finish
-        (while htmlfile
-          (setq htmltestfile (car htmlfile))
-          (if (string-match (format "%s" orgtestfile) (format "%s" htmltestfile))
-              (progn
-                (setq readyfile (cons testfile readyfile))
-                (throw 'finish t))
-            nil)
-          (setq htmlfile (cdr htmlfile))))
-      (setq htmlfile htmlfilecopy)
-      (setq orgfile (cdr orgfile)))
-    (setq notyetfile orgfilecopy)
-    (while readyfile
-      (setq deletefile (car readyfile))
-      (delete deletefile notyetfile)
-      (setq readyfile (cdr readyfile)))
-    (while notyetfile
-      (setq targetfile (car notyetfile))
-      (find-file targetfile)
-      (org-export-dispatch)
-      (kill-buffer (current-buffer))
-      (setq notyetfile (cdr notyetfile)))
-    (find-file "~/org/blog/koushin.org")
-    (org-export-dispatch)
-    (kill-buffer (current-buffer))))
+  (if (y-or-n-p "export to HTML file? : ")
+      (execute-kbd-macro (symbol-function 'auto-export-to-html))
+    nil))
+
+(defun all-export-to-html ()
+  "すべての orgファイル を HTMLファイル にエクスポートする"
+  (interactive)
+  (if (y-or-n-p "do you want to export all org-files to HTML-files? : ")
+      (progn
+        (let ((current-point (point)))
+          (let (inside-files org-or-html org-files)
+            (setq inside-files (directory-files "~/org/blog/" t))
+            (while inside-files
+              (setq org-or-html (car inside-files))
+              (if (string-match "\\.org$" (format "%s" org-or-html))
+                  (setq org-files (cons org-or-html org-files))
+                nil)
+              (setq inside-files (cdr inside-files)))
+            (let (export-file)
+              (while org-files
+                (setq export-file (car org-files))
+                (find-file (format "%s" export-file))
+                (execute-kbd-macro (symbol-function 'auto-export-to-html))
+                (kill-buffer (current-buffer))
+                (setq org-files (cdr org-files)))))
+          (find-file "~/org/blog/index.org")
+          (goto-char current-point)))
+    nil))
+
+(defun end-blog ()
+  "current-buffer が index.org の時に blog-mode を閉じる"
+  (interactive)
+  (if (string= "index.org" (buffer-name (current-buffer)))
+      (progn
+        (if (file-exists-p "~/org/blog/koushin.org")
+            (progn
+              (find-file "~/org/blog/koushin.org")
+              (export-to-html)
+              (kill-buffer (current-buffer)))
+          nil)
+        (export-to-html)
+        (kill-buffer (current-buffer)))
+    (message "you can't end blog-mode! go to index.org!")))
+
+(defun blog-help ()
+  "利用できるキーバインドをメッセージ表示"
+  (interactive)
+  (message "C-c C-n : make a new topic (make a link)\nM-<RET> : insert heading\n<TAB> (next to heading) : demote a heading level\n<TAB> (on heading) : fold the current subtree up to its root level\nC-x C-s : save changes\nC-c C-o : open a topic (jump to a link destination)\nC-c <C-left> : go back to previous page\nC-c x : export all org-files to html-files\nC-c e : close blog-mode\n"))
