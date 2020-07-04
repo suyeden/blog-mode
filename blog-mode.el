@@ -177,4 +177,4 @@
 (defun blog-help ()
   "利用できるキーバインドをメッセージ表示"
   (interactive)
-  (message "C-c C-n : make a new topic (make a link)\nM-<RET> : insert heading\n<TAB> (next to heading) : demote a heading level\n<TAB> (on heading) : fold the current subtree up to its root level\nC-x C-s : save changes\nC-c C-o : open a topic (jump to a link destination)\nC-c <C-left> : go back to previous page\nC-c x : export all org-files to html-files\nC-c e : close blog-mode\n"))
+  (message "C-c C-n : make a new topic (make a link)\nM-<RET> : insert a new heading\n<TAB> (next to heading) : demote a heading level\n<TAB> (on heading) : fold the current subtree up to its root level\nC-x C-s : save changes\nC-c C-o : open a topic (jump to a link destination)\nC-c <C-left> : go back to previous page\nC-c x : export all org-files to HTML-files\nC-c e : close blog-mode"))
