@@ -15,16 +15,16 @@
 (defun blog-mode ()
   "blog-mode"
   (interactive)
-  ;; blog-mode を開く前のバッファを記録
-  (defvar my-current-buffer)
-  (setq my-current-buffer (current-buffer))
-  ;; リンクを開く前のウィンドウを記録
-  (defvar my-pre-win)
-  (setq my-pre-win (selected-window))
+  ;; org-open-at-point の際に別ウィンドウで開かないようにする
+  (setq org-link-frame-setup
+        '((vm . vm-visit-folder-other-frame)
+          (vm-imap . vm-visit-imap-folder-other-frame)
+          (gnus . org-gnus-no-new-news)
+          (file . find-file)
+          (wl . wl-other-frame)))
   ;; org-export-dispatch (org-fileからhtml-fileへの変換) のキーボードマクロ
   (fset 'auto-export-to-html
         "\C-c\C-ehh")
-  (delete-other-windows)
   (start-blog)
   ;; define-key
   ;; 1. キーバインドに矢印キーを用いたい -> (local-set-key)
@@ -48,11 +48,6 @@
     (re-search-backward "* Category" nil t)
     (beginning-of-line)))
 
-(defadvice org-open-at-point (before pre-win ())
-  "org-open の前に 1つ前の画面を表示するウィンドウを記録"
-  (setq my-pre-win (selected-window)))
-(ad-activate 'org-open-at-point)
-
 (defun back-page ()
   "1つ前の画面に戻る"
   (interactive)
@@ -62,12 +57,8 @@
           (message "if you want to end blog-mode, type 'C-c e' !")
           (throw 'flag t))
       nil)
-    (export-to-html)
-    (kill-buffer (current-buffer))
-    (select-window my-pre-win)
-    (if (string= "index.org" (buffer-name (current-buffer)))
-        (delete-window)
-      nil)))
+    (save-buffer)
+    (kill-buffer (current-buffer))))
 
 (defun new-blog ()
   "新しいブログトピックを作成する"
@@ -127,13 +118,6 @@
             (kill-buffer (current-buffer)))
         nil))))
 
-(defun export-to-html ()
-  "current-buffer の orgファイル を HTMLファイル にエクスポート"
-  (interactive)
-  (if (y-or-n-p "export to HTML file? : ")
-      (execute-kbd-macro (symbol-function 'auto-export-to-html))
-    nil))
-
 (defun all-export-to-html ()
   "すべての orgファイル を HTMLファイル にエクスポートする"
   (interactive)
@@ -167,14 +151,14 @@
         (if (file-exists-p "~/org/blog/koushin.org")
             (progn
               (find-file "~/org/blog/koushin.org")
-              (export-to-html)
+              (save-buffer)
               (kill-buffer (current-buffer)))
           nil)
-        (export-to-html)
+        (save-buffer)
         (kill-buffer (current-buffer)))
     (message "you can't end blog-mode! go to index.org!")))
 
 (defun blog-help ()
   "利用できるキーバインドをメッセージ表示"
   (interactive)
-  (message "C-c C-n : make a new topic (make a link)\nM-<RET> : insert a new heading\n<TAB> (next to heading) : demote a heading level\n<TAB> (on heading) : fold the current subtree up to its root level\nC-x C-s : save changes\nC-c C-o : open a topic (jump to a link destination)\nC-c <C-left> : go back to previous page\nC-c x : export all org-files to HTML-files\nC-c e : close blog-mode"))
+  (message "C-c C-n : make a new topic (make a link)\nM-<RET> : insert a new heading\n<TAB> (next to heading) : demote a heading level\n<TAB> (on heading) : fold the current subtree up to its root level\nC-c C-o : open a topic (jump to a link destination)\nC-c <C-left> : go back to previous page\nC-c x : export all org-files to HTML-files\nC-c e : close blog-mode"))
