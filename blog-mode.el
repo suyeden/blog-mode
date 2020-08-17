@@ -10,6 +10,7 @@
 (define-key org-mode-map "\C-ce" 'end-blog)
 (define-key org-mode-map "\C-c\C-h" 'blog-help)
 (define-key org-mode-map "\C-cx" 'all-export-to-html)
+(define-key org-mode-map "\C-c\C-xx" 'export-to-html)
 
 ;;; blog-mode (my new major-mode)
 (defun blog-mode ()
@@ -118,6 +119,12 @@
             (kill-buffer (current-buffer)))
         nil))))
 
+(defun export-to-html ()
+  "current-buffer の orgファイル を HTMLファイル にエクスポート"
+  (interactive)
+  (execute-kbd-macro (symbol-function 'auto-export-to-html))
+  (message "Done!"))
+
 (defun all-export-to-html ()
   "すべての orgファイル を HTMLファイル にエクスポートする"
   (interactive)
@@ -140,7 +147,8 @@
                 (kill-buffer (current-buffer))
                 (setq org-files (cdr org-files)))))
           (find-file "~/org/blog/index.org")
-          (goto-char current-point)))
+          (goto-char current-point)
+          (message "Done!")))
     nil))
 
 (defun end-blog ()
@@ -161,4 +169,4 @@
 (defun blog-help ()
   "利用できるキーバインドをメッセージ表示"
   (interactive)
-  (message "C-c C-n : make a new topic (make a link)\nM-<RET> : insert a new heading\n<TAB> (next to heading) : demote a heading level\n<TAB> (on heading) : fold the current subtree up to its root level\nC-c C-o : open a topic (jump to a link destination)\nC-c <C-left> : go back to previous page\nC-c x : export all org-files to HTML-files\nC-c e : close blog-mode"))
+  (message "C-c C-n : make a new topic (make a link)\nM-<RET> : insert a new heading\n<TAB> (next to heading) : demote a heading level\n<TAB> (on heading) : fold the current subtree up to its root level\nC-c C-o : open a topic (jump to a link destination)\nC-c <C-left> : go back to previous page\nC-c C-x x : export current-buffer's org-file to HTML-file\nC-c x : export all org-files to HTML-files\nC-c e : close blog-mode"))
