@@ -9,8 +9,8 @@
 (define-key org-mode-map "\C-c\C-n" 'new-blog)
 (define-key org-mode-map "\C-ce" 'end-blog)
 (define-key org-mode-map "\C-c\C-h" 'blog-help)
-(define-key org-mode-map "\C-cx" 'all-export-to-html)
-(define-key org-mode-map "\C-c\C-xx" 'export-to-html)
+(define-key org-mode-map "\C-xx" 'all-export-to-html)
+(define-key org-mode-map "\C-cx" 'export-to-html)
 
 ;;; blog-mode (my new major-mode)
 (defun blog-mode ()
@@ -169,4 +169,4 @@
 (defun blog-help ()
   "利用できるキーバインドをメッセージ表示"
   (interactive)
-  (message "C-c C-n : make a new topic (make a link)\nM-<RET> : insert a new heading\n<TAB> (next to heading) : demote a heading level\n<TAB> (on heading) : fold the current subtree up to its root level\nC-c C-o : open a topic (jump to a link destination)\nC-c <C-left> : go back to previous page\nC-c C-x x : export current-buffer's org-file to HTML-file\nC-c x : export all org-files to HTML-files\nC-c e : close blog-mode"))
+  (message "C-c C-n : make a new topic (make a link)\nM-<RET> : insert a new heading\n<TAB> (next to heading) : demote a heading level\n<TAB> (on heading) : fold the current subtree up to its root level\nC-c C-o : open a topic (jump to a link destination)\nC-c <C-left> : go back to previous page\nC-c x : export current-buffer's org-file to HTML-file\nC-x x : export all org-files to HTML-files\nC-c e : close blog-mode"))
