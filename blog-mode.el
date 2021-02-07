@@ -6,7 +6,7 @@
 ;;; keymap
 (defvar org-mode-map (make-keymap))
 ;;; define-key
-(define-key org-mode-map "\C-c\C-n" 'new-blog)
+(define-key org-mode-map "\C-cn" 'new-blog)
 (define-key org-mode-map "\C-ce" 'end-blog)
 (define-key org-mode-map "\C-c\C-h" 'blog-help)
 (define-key org-mode-map "\C-xx" 'all-export-to-html)
@@ -199,7 +199,7 @@
   (get-buffer-create "*blog-help*")
   (switch-to-buffer "*blog-help*")
   (delete-region (point-min) (point-max))
-  (insert "\n\n C-c C-n : make a new topic (make a link)\n\n M-<RET> : insert a new heading\n\n <M-left> or <M-right> : change the heading level\n\n C-c C-o : open the topic (jump to the link destination)\n\n C-c <C-left> : go back to previous page\n\n C-c x : export current-buffer's org-file to HTML-file\n\n C-x x : export all org-files to HTML-files and return to the top page\n\n C-c e : close blog-mode \n\n----------------------------------------------------------------------\n\n C-u C-i : fold all subtrees up to their root level\n\n <TAB> or C-i : fold the current subtree up to its root level\n\n C-c s : insert a source code block\n\n C-c M-s : insert leading whitespace from current-point to end-of-buffer\n\n C-j : start a new line considering leading whitespace\n\n C-c l : store a link to the current file\n\n C-c C-l : insert a stored-link\n\n C-c C-f/b : move to next/previous heading")
+  (insert "\n\n C-c n : make a new topic (make a link)\n\n M-<RET> : insert a new heading\n\n <M-left> or <M-right> : change the heading level\n\n C-c C-o : open the topic (jump to the link destination)\n\n C-c <C-left> : go back to previous page\n\n C-c x : export current-buffer's org-file to HTML-file\n\n C-x x : export all org-files to HTML-files and return to the top page\n\n C-c e : close blog-mode \n\n----------------------------------------------------------------------\n\n S-<TAB> or C-u C-i : fold all subtrees up to their root level\n\n <TAB> or C-i : fold the current subtree up to its root level\n\n C-c s : insert a source code block\n\n C-c M-s : insert leading whitespace from current-point to end-of-buffer\n\n C-j : start a new line considering leading whitespace\n\n C-c l : store a link to the current file\n\n C-c C-l : insert a stored-link\n\n C-c C-n/p : move to next/previous heading")
   (while (not (string= "q" (read-string "when you quit from this page, please press 'q' and press return : ")))
     (message "non-valid variable!")
     (sleep-for 0.5))
