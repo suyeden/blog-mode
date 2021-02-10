@@ -9,9 +9,7 @@
 (define-key org-mode-map "\C-cn" 'new-blog)
 (define-key org-mode-map "\C-ce" 'end-blog)
 (define-key org-mode-map "\C-c\C-h" 'blog-help)
-(define-key org-mode-map "\C-xx" 'all-export-to-html)
-(define-key org-mode-map "\C-cx" 'export-to-html)
-(define-key org-mode-map "\C-cs" 'blog-insert-src)
+(define-key org-mode-map "\C-cx" 'all-export-to-html)
 (define-key org-mode-map "\C-c\M-s" 'blog-insert-space)
 
 ;;; blog-mode (my new major-mode)
@@ -120,13 +118,6 @@
             (kill-buffer (current-buffer)))
         nil))))
 
-(defun export-to-html ()
-  "current-buffer の orgファイル を HTMLファイル にエクスポート"
-  (interactive)
-  (save-buffer)
-  (execute-kbd-macro (symbol-function 'auto-export-to-html))
-  (message "Done!"))
-
 (defun all-export-to-html ()
   "すべての orgファイル を HTMLファイル にエクスポートする"
   (interactive)
@@ -153,17 +144,6 @@
           (goto-char current-point)
           (message "Done!")))
     nil))
-
-(defun blog-insert-src ()
-  "ソースコード入力の枠組み（コードブロック）を作る"
-  (interactive)
-  (let (head-spaces)
-    (setq head-spaces (current-column))
-    (insert "#+begin_src\n\n")
-    (insert (make-string head-spaces ? ))
-    (insert "#+end_src")
-    (forward-line -1)
-    (insert (make-string head-spaces ? ))))
 
 (defun blog-insert-space ()
   "バッファ終わりまで行の先頭にスペースを入れる"
@@ -194,12 +174,12 @@
     (message "you can't end blog-mode! go to index.org!")))
 
 (defun blog-help ()
-  "利用できるキーバインドをメッセージ表示"
+  "利用できるキーバインドを表示"
   (interactive)
   (get-buffer-create "*blog-help*")
   (switch-to-buffer "*blog-help*")
   (delete-region (point-min) (point-max))
-  (insert "\n\n C-c n : make a new topic (make a link)\n\n M-<RET> : insert a new heading\n\n <M-left> or <M-right> : change the heading level\n\n C-c C-o : open the topic (jump to the link destination)\n\n C-c <C-left> : go back to previous page\n\n C-c x : export current-buffer's org-file to HTML-file\n\n C-x x : export all org-files to HTML-files and return to the top page\n\n C-c e : close blog-mode \n\n----------------------------------------------------------------------\n\n S-<TAB> or C-u C-i : fold all subtrees up to their root level\n\n <TAB> or C-i : fold the current subtree up to its root level\n\n C-c s : insert a source code block\n\n C-c M-s : insert leading whitespace from current-point to end-of-buffer\n\n C-j : start a new line considering leading whitespace\n\n C-c l : store a link to the current file\n\n C-c C-l : insert a stored-link\n\n C-c C-n/p : move to next/previous heading")
+  (insert "\n C-c n : make a new topic (make a link)\n C-c l : store a link to the current file\n C-c C-l : insert a stored-link\n M-<RET> : insert a new heading\n <M-left> or <M-right> : change the heading level\n <M-Up> or <M-Down> : rearrange the list\n C-c C-o : open the topic (jump to the link destination)\n C-c <C-left> : go back to previous page\n C-c C-e h H/h/o : export current-buffer's org-file to HTML-file\n C-c x : export all org-files to HTML-files and return to the top page\n C-c e : close blog-mode\n\n----------------------------------------------------------------------\n\n S-<TAB> or C-u C-i : fold all subtrees up to their root level\n <TAB> or C-i : fold the current subtree up to its root level\n C-c C-, : insert a code block\n C-c ' : edit a source code block\n C-c C-c : execute a source code block\n C-M-i : display a list of supported languages in the source code block\n C-c M-s : insert leading whitespace from current-point to end-of-buffer\n C-j : start a new line considering leading whitespace\n C-c C-n/p : move to next/previous heading\n\n----------------------------------------------------------------------\n\n - : a list without number\n 1. : a list with number\n C-c C-c : renumber the list\n C-c - : change the format of the list\n\n *bold*\n /italic/\n _underline_\n +strikethrough+")
   (while (not (string= "q" (read-string "when you quit from this page, please press 'q' and press return : ")))
     (message "non-valid variable!")
     (sleep-for 0.5))
