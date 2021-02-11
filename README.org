@@ -1,0 +1,50 @@
+#+TITLE: blog-mode
+#+AUTHOR: suyeden
+#+EMAIL: 
+#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \n:t
+#+STARTUP: showall
+
+* blog-mode
+  ~blog-mode~ is a major mode for Emacs using Org-mode.
+  You can use the functions of ~blog-mode~ when you open the file with the extension ~.org~.
+  It enables you to easily take notes or make a personal wiki on your Emacs.
+
+** Installation
+   First of all, make sure you can use ~Org-mode~ in your Emacs because ~blog-mode~ uses the functions of ~Org-mode~. Please check other websites for more information about ~Org-mode~.
+   Then, place ~blog-mode.el~ (or ~blog-mode.elc~) file in any directory on your computer like ~~/.emacs.d/lisp/~ and add the code below to your Emacs configuration file like ~.emacs~ or ~init.el~.
+
+   #+begin_src emacs-lisp
+     ;; Add to your Emacs configuration file
+     (add-to-list 'load-path "~/.emacs.d/lisp")
+     (load-library "blog-mode.el")
+   #+end_src
+
+** Usage
+   When you want to start ~blog-mode~, press ~C-c b~. ~/org/blog~ directory will be created under your home directory.
+   You can see ~help~ with ~C-c C-h~, and input ~q~ and then press ~Return~ on mini-buffer to quit from ~help~.
+
+   You can use the key bindings and the functions below.
+
+   | key binding       | function                                                       |
+   |-------------------+----------------------------------------------------------------|
+   | C-c n             | make a new topic (make a link)                                 |
+   | C-c C-l           | insert a stored-link                                           |
+   | M-RET             | insert a new heading                                           |
+   | M-left or M-right | change the heading level                                       |
+   | M-Up or M-Down    | rearrange the list                                             |
+   | C-c C-o           | open the topic (jump to the link destination)                  |
+   | C-c C-left        | go back to previous page                                       |
+   | C-c C-e h H/h/o   | export current-buffer's org-file to HTML-file                  |
+   | C-c x             | export all org-files to HTML-files and return to the top page  |
+   | C-c e             | close blog-mode                                                |
+   | S-TAB or C-u C-i  | fold all subtrees up to their root level                       |
+   | TAB or C-i        | fold the current subtree up to its root level                  |
+   | C-c C-,           | insert a code block                                            |
+   | C-c '             | edit a source code block                                       |
+   | C-c C-c           | execute a source code block                                    |
+   | C-M-i             | display a list of supported languages in the source code block |
+   | C-c M-s           | insert leading whitespace from current-point to end-of-buffer  |
+   | C-j               | start a new line considering leading whitespace                |
+   | C-c C-n/p         | move to next/previous heading                                  |
+
+   And also, you can use most of the key bindings and the syntax of ~Org-mode~ in this mode.
