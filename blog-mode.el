@@ -5,12 +5,14 @@
 
 ;;; keymap
 (defvar org-mode-map (make-keymap))
+(defvar blog-mode-map (make-keymap))
+(set-keymap-parent blog-mode-map org-mode-map)
 ;;; define-key
-(define-key org-mode-map "\C-cn" 'new-blog)
-(define-key org-mode-map "\C-ce" 'end-blog)
-(define-key org-mode-map "\C-c\C-h" 'blog-help)
-(define-key org-mode-map "\C-cx" 'all-export-to-html)
-(define-key org-mode-map "\C-c\M-s" 'blog-insert-space)
+(define-key blog-mode-map "\C-cn" 'new-blog)
+(define-key blog-mode-map "\C-ce" 'end-blog)
+(define-key blog-mode-map "\C-c\C-h" 'blog-help)
+(define-key blog-mode-map "\C-cx" 'all-export-to-html)
+(define-key blog-mode-map "\C-c\M-s" 'blog-insert-space)
 
 ;;; blog-mode (my new major-mode)
 (defun blog-mode ()
@@ -27,14 +29,14 @@
   (fset 'auto-export-to-html
         "\C-c\C-ehh")
   (start-blog)
+  (use-local-map blog-mode-map)
+  (setq major-mode 'blog-mode
+        mode-name "blog")
   ;; define-key
   ;; 1. キーバインドに矢印キーを用いたい -> (local-set-key)
-  ;; 2. local-set-key をしたいが、 org-mode に対してキーバインドを追加したい
-  ;; という理由のため、org-mode が有効になったこのタイミングで設定する
-  (local-set-key (kbd "C-c <C-left>") 'back-page)
-  (use-local-map org-mode-map)
-  (setq major-mode 'org-mode
-        mode-name "Org"))
+  ;; 2. local-set-key をしたいが、 blog-mode に対してキーバインドを追加したい
+  ;; という理由のため、blog-mode が有効になったこのタイミングで設定する  
+  (local-set-key (kbd "C-c <C-left>") 'back-page))
 
 (defun start-blog ()
   "blog-modeを開く"
@@ -48,6 +50,13 @@
     (insert "#+TITLE: すえーでんの技術ブログ\n#+AUTHOR: suyeden\n#+EMAIL: \n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t\n#+STARTUP: showall\n** [[file:koushin.org][更新履歴]]\n\n------------------------------------------------------------------------------------------\n\n* Category\n\n\n------------------------------------------------------------------------------------------\n")
     (re-search-backward "* Category" nil t)
     (beginning-of-line)))
+
+(defadvice org-open-at-point (after my-change-keymap ())
+  "リンク先を開いた際にキーマップを blog-mode-map に変更する"
+  (use-local-map blog-mode-map)
+  (setq major-mode 'blog-mode
+        mode-name "blog"))
+(ad-activate 'org-open-at-point)
 
 (defun back-page ()
   "1つ前の画面に戻る"
