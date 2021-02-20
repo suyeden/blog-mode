@@ -14,6 +14,7 @@
 (define-key blog-mode-map "\C-cx" 'all-export-to-html)
 (define-key blog-mode-map "\C-c\M-s" 'blog-insert-space)
 (define-key blog-mode-map "\C-\M-i" 'blog-complete-symbol)
+(define-key blog-mode-map "\C-\M-d" 'blog-delete)
 
 ;;; blog-mode (my new major-mode)
 (defun blog-mode ()
@@ -221,6 +222,36 @@
           (insert " ")
           (setq i (1+ i))))
       (forward-line))))
+
+(defun blog-delete ()
+  "現在行上にあるリンクを削除してorgファイルも削除する"
+  (interactive)
+  (let (line-contents delete-file-name delete-topic-name)
+    (catch 'foo-blog-delete
+      (save-excursion
+        (beginning-of-line)
+        (setq line-contents (buffer-substring (point) (progn (end-of-line) (point))))
+        (with-temp-buffer
+          (insert (format "%s" line-contents))
+          (goto-char (point-min))
+          (if (re-search-forward "\\[\\[file:\\(.+\\)\.org\\]\\[\\(.+\\)\\]\\]" nil t)
+              (progn
+                (setq delete-file-name (buffer-substring (match-beginning 1) (match-end 1)))
+                (setq delete-topic-name (buffer-substring (match-beginning 2) (match-end 2))))
+            (throw 'foo-blog-delete t))))
+      (if (y-or-n-p (format "Make sure there is no link in %s. Delete this topic ?" delete-topic-name))
+          (progn
+            (if (y-or-n-p "Delete linked file too ?")
+                (progn
+                  (delete-file (format "~/org/blog/%s.org" delete-file-name))
+                  (if (file-exists-p (format "~/org/blog/%s.html" delete-file-name))
+                      (delete-file (format "~/org/blog/%s.html" delete-file-name))
+                    nil))
+              nil)
+            (beginning-of-line)
+            (delete-region (point) (progn (forward-line) (point)))
+            (message (format "%s deleted ! If necessary, edit koushin.org." delete-topic-name)))
+        nil))))
 
 (defun end-blog ()
   "current-buffer が index.org の時に blog-mode を閉じる"
