@@ -13,6 +13,7 @@
 (define-key blog-mode-map "\C-c\C-h" 'blog-help)
 (define-key blog-mode-map "\C-cx" 'all-export-to-html)
 (define-key blog-mode-map "\C-c\M-s" 'blog-insert-space)
+(define-key blog-mode-map "\C-\M-i" 'blog-complete-symbol)
 
 ;;; blog-mode (my new major-mode)
 (defun blog-mode ()
@@ -53,10 +54,56 @@
 
 (defadvice org-open-at-point (after my-change-keymap ())
   "リンク先を開いた際にキーマップを blog-mode-map に変更する"
+  (if (get-buffer "index.org")
+      (progn
+        (use-local-map blog-mode-map)
+        (setq major-mode 'blog-mode
+              mode-name "blog"))
+    nil))
+(ad-activate 'org-open-at-point)
+
+;; この操作を行っておかないとC-c 'で行った編集が適用されない
+(defadvice org-edit-special (before my-change-keymap-blog-to-org ())
+  "ソースコードブロックを編集する前に blog-mode-map から org-mode-map に変更する"
+  (if (get-buffer "index.org")
+      (progn
+        (use-local-map org-mode-map)
+        (setq major-mode 'org-mode
+              mode-name "Org"))
+    nil))
+(ad-activate 'org-edit-special)
+;;
+(defadvice org-edit-src-exit (after my-change-keymap-org-to-blog ())
+  "ソースコードブロックを編集した後に org-mode-map から blog-mode-map に変更する"
+  (if (get-buffer "index.org")
+      (progn
+        (use-local-map blog-mode-map)
+        (setq major-mode 'blog-mode
+              mode-name "blog"))
+    nil))
+(ad-activate 'org-edit-src-exit)
+;;
+(defadvice org-edit-src-abort (after my-change-keymap-abort-org-to-blog ())
+  "ソースコードブロックの編集を破棄し、org-mode-map から blog-mode-map に変更する"
+  (if (get-buffer "index.org")
+      (progn
+        (use-local-map 'blog-mode)
+        (setq major-mode 'blog-mode
+              mode-name "blog"))
+    nil))
+(ad-activate 'org-edit-src-abort)
+
+(defun blog-complete-symbol ()
+  "ソースコードブロックに適用できる言語一覧を表示する"
+  (interactive)
+  (use-local-map org-mode-map)
+  (setq major-mode 'org-mode
+        mode-name "Org")
+  (complete-symbol nil)
   (use-local-map blog-mode-map)
   (setq major-mode 'blog-mode
-        mode-name "blog"))
-(ad-activate 'org-open-at-point)
+        mode-name "blog")
+  (pop-to-buffer "*Completions*"))
 
 (defun back-page ()
   "1つ前の画面に戻る"
@@ -133,7 +180,9 @@
   (save-buffer)
   (if (y-or-n-p "do you want to export all org-files to HTML-files? : ")
       (progn
-        (let ((current-point (point)))
+        (let (current-point)
+          (switch-to-buffer "index.org")
+          (setq current-point (point))
           (let (inside-files org-or-html org-files)
             (setq inside-files (directory-files "~/org/blog/" t))
             (while inside-files
@@ -153,6 +202,11 @@
           (goto-char current-point)
           (message "Done!")))
     nil))
+(defadvice all-export-to-html (after all-export-to-html-change-keymap ())
+  (use-local-map blog-mode-map)
+  (setq major-mode 'blog-mode
+        mode-name "blog"))
+(ad-activate 'all-export-to-html)
 
 (defun blog-insert-space ()
   "バッファ終わりまで行の先頭にスペースを入れる"
