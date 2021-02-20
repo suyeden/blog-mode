@@ -1,7 +1,7 @@
 ;;;; -*- Emacs-Lisp -*-
 ;;;; blog-mode written by suyeden
 
-(define-key global-map "\C-cb" 'blog-mode)
+(define-key global-map "\C-cb" 'start-blog)
 
 ;;; keymap
 (defvar org-mode-map (make-keymap))
@@ -29,7 +29,6 @@
   ;; org-export-dispatch (org-fileからhtml-fileへの変換) のキーボードマクロ
   (fset 'auto-export-to-html
         "\C-c\C-ehh")
-  (start-blog)
   (use-local-map blog-mode-map)
   (setq major-mode 'blog-mode
         mode-name "blog")
@@ -41,6 +40,7 @@
 
 (defun start-blog ()
   "blog-modeを開く"
+  (interactive)
   (if (file-exists-p "~/org/blog/index.org")
       (progn
         (find-file "~/org/blog/index.org")
@@ -50,7 +50,8 @@
     (find-file "~/org/blog/index.org")
     (insert "#+TITLE: すえーでんの技術ブログ\n#+AUTHOR: suyeden\n#+EMAIL: \n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t\n#+STARTUP: showall\n** [[file:koushin.org][更新履歴]]\n\n------------------------------------------------------------------------------------------\n\n* Category\n\n\n------------------------------------------------------------------------------------------\n")
     (re-search-backward "* Category" nil t)
-    (beginning-of-line)))
+    (beginning-of-line))
+  (blog-mode))
 
 (defadvice org-open-at-point (after my-change-keymap ())
   "リンク先を開いた際にキーマップを blog-mode-map に変更する"
