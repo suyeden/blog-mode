@@ -21,6 +21,7 @@ Then, place `blog-mode.el` file in any directory on your computer like `~/.emacs
 ## Usage
 
 When you want to start `blog-mode`, press `C-c b`. `/org/blog` directory will be created under your home directory.  
+`M-x blog-mode` can also be used to enable the `blog-mode` on the current document.  
 You can see `help` with `C-c C-h`. To quit from `help`, type `q` and press `Return` on mini-buffer.  
 
 You can use the key bindings and the functions below.  
@@ -86,6 +87,12 @@ You can use the key bindings and the functions below.
 <tr>
 <td class="org-left">C-c C-e h H/h/o</td>
 <td class="org-left">export current-buffer's org-file to HTML-file</td>
+</tr>
+
+
+<tr>
+<td class="org-left">C-M-d</td>
+<td class="org-left">delete the topic (delete the link and the linked file)</td>
 </tr>
 
 
