@@ -21,8 +21,8 @@ Then, place `blog-mode.el` file in any directory on your computer like `~/.emacs
 ## Usage
 
 When you want to start `blog-mode`, press `C-c b`. `/org/blog` directory will be created under your home directory.  
-`M-x blog-mode` can also be used to enable the `blog-mode` on the current document.  
-You can see `help` with `C-c C-h`. To quit from `help`, type `q` and press `Return` on mini-buffer.  
+`M-x blog-mode` can also be used to enable `blog-mode` on your current document.  
+You can see `help` with `C-c C-h`. To quit from `help`, type `q` and then press `Return` on mini-buffer.  
 
 You can use the key bindings and the functions below.  
 
