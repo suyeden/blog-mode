@@ -57,10 +57,7 @@
 (defadvice org-open-at-point (after my-change-keymap ())
   "リンク先を開いた際にキーマップを blog-mode-map に変更する"
   (if (get-buffer "index.org")
-      (progn
-        (use-local-map blog-mode-map)
-        (setq major-mode 'blog-mode
-              mode-name "blog"))
+      (blog-mode)
     nil))
 (ad-activate 'org-open-at-point)
 
@@ -68,43 +65,30 @@
 (defadvice org-edit-special (before my-change-keymap-blog-to-org ())
   "ソースコードブロックを編集する前に blog-mode-map から org-mode-map に変更する"
   (if (get-buffer "index.org")
-      (progn
-        (use-local-map org-mode-map)
-        (setq major-mode 'org-mode
-              mode-name "Org"))
+      (org-mode)
     nil))
 (ad-activate 'org-edit-special)
 ;;
 (defadvice org-edit-src-exit (after my-change-keymap-org-to-blog ())
   "ソースコードブロックを編集した後に org-mode-map から blog-mode-map に変更する"
   (if (get-buffer "index.org")
-      (progn
-        (use-local-map blog-mode-map)
-        (setq major-mode 'blog-mode
-              mode-name "blog"))
+      (blog-mode)
     nil))
 (ad-activate 'org-edit-src-exit)
 ;;
 (defadvice org-edit-src-abort (after my-change-keymap-abort-org-to-blog ())
   "ソースコードブロックの編集を破棄し、org-mode-map から blog-mode-map に変更する"
   (if (get-buffer "index.org")
-      (progn
-        (use-local-map 'blog-mode)
-        (setq major-mode 'blog-mode
-              mode-name "blog"))
+      (blog-mode)
     nil))
 (ad-activate 'org-edit-src-abort)
 
 (defun blog-complete-symbol ()
   "ソースコードブロックに適用できる言語一覧を表示する"
   (interactive)
-  (use-local-map org-mode-map)
-  (setq major-mode 'org-mode
-        mode-name "Org")
+  (org-mode)
   (complete-symbol nil)
-  (use-local-map blog-mode-map)
-  (setq major-mode 'blog-mode
-        mode-name "blog")
+  (blog-mode)
   (pop-to-buffer "*Completions*"))
 
 (defun back-page ()
@@ -224,7 +208,7 @@
       (forward-line))))
 
 (defun blog-delete ()
-  "現在行上にあるリンクを削除してorgファイルも削除する"
+  "現在行上にあるリンクを削除して必要ならorgファイルも削除する"
   (interactive)
   (let (line-contents delete-file-name delete-topic-name)
     (catch 'foo-blog-delete
@@ -250,7 +234,7 @@
               nil)
             (beginning-of-line)
             (delete-region (point) (progn (forward-line) (point)))
-            (message (format "%s deleted ! If necessary, edit koushin.org." delete-topic-name)))
+            (message (format "%s deleted! If necessary, edit koushin.org." delete-topic-name)))
         nil))))
 
 (defun end-blog ()
@@ -274,7 +258,7 @@
   (get-buffer-create "*blog-help*")
   (switch-to-buffer "*blog-help*")
   (delete-region (point-min) (point-max))
-  (insert "\n C-c n : make a new topic (make a link)\n C-c C-l : insert a stored-link\n M-<RET> : insert a new heading\n <M-left> or <M-right> : change the heading level\n <M-Up> or <M-Down> : rearrange the list\n C-c C-o : open the topic (jump to the link destination)\n C-c <C-left> : go back to previous page\n C-c C-e h H/h/o : export current-buffer's org-file to HTML-file\n C-c x : export all org-files to HTML-files and return to the top page\n C-c e : close blog-mode\n\n S-<TAB> or C-u C-i : fold all subtrees up to their root level\n <TAB> or C-i : fold the current subtree up to its root level\n C-c C-, : insert a code block\n C-c ' : edit a source code block\n C-c C-c : execute a source code block\n C-M-i : display a list of supported languages in the source code block\n C-c M-s : insert leading whitespace from current-point to end-of-buffer\n C-j : start a new line considering leading whitespace\n C-c C-n/p : move to next/previous heading\n\n----------------------------------------------------------------------\n < Syntax note >\n\n - : a list without number\n 1. : a list with number\n (C-c C-c : renumber the list)\n (C-c - : change the format of the list)\n\n *bold*\n /italic/\n _underline_\n +strikethrough+\n ~inline code~\n ----- : horizontal rule")
+  (insert "\n C-c n : make a new topic (make a link)\n C-c C-l : insert a stored-link\n M-<RET> : insert a new heading\n <M-left> or <M-right> : change the heading level\n <M-Up> or <M-Down> : rearrange the list\n C-c C-o : open the topic (jump to the link destination)\n C-c <C-left> : go back to previous page\n C-c C-e h H/h/o : export current-buffer's org-file to HTML-file\n C-M-d : delete the topic (delete the link and the linked file)\n C-c x : export all org-files to HTML-files and return to the top page\n C-c e : close blog-mode\n\n S-<TAB> or C-u C-i : fold all subtrees up to their root level\n <TAB> or C-i : fold the current subtree up to its root level\n C-c C-, : insert a code block\n C-c ' : edit a source code block\n C-c C-c : execute a source code block\n C-M-i : display a list of supported languages in the source code block\n C-c M-s : insert leading whitespace from current-point to end-of-buffer\n C-j : start a new line considering leading whitespace\n C-c C-n/p : move to next/previous heading\n\n----------------------------------------------------------------------\n < Syntax note >\n\n - : a list without number\n 1. : a list with number\n (C-c C-c : renumber the list)\n (C-c - : change the format of the list)\n\n *bold*\n /italic/\n _underline_\n +strikethrough+\n ~inline code~\n ----- : horizontal rule")
   (while (not (string= "q" (read-string "when you quit from this page, please press 'q' and press return : ")))
     (message "non-valid variable!")
     (sleep-for 0.5))
