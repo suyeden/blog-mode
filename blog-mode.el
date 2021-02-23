@@ -8,8 +8,8 @@
 (defvar blog-mode-map (make-keymap))
 (set-keymap-parent blog-mode-map org-mode-map)
 ;;; define-key
-(define-key blog-mode-map "\C-cn" 'new-blog)
-(define-key blog-mode-map "\C-ce" 'end-blog)
+(define-key blog-mode-map "\C-cn" 'blog-new)
+(define-key blog-mode-map "\C-ce" 'blog-end)
 (define-key blog-mode-map "\C-c\C-h" 'blog-help)
 (define-key blog-mode-map "\C-cx" 'all-export-to-html)
 (define-key blog-mode-map "\C-c\M-s" 'blog-insert-space)
@@ -103,7 +103,7 @@
     (save-buffer)
     (kill-buffer (current-buffer))))
 
-(defun new-blog ()
+(defun blog-new ()
   "新しいブログトピックを作成する"
   (interactive)
   (let (f-or-d blog-name (real-name nil) now-time)
@@ -237,7 +237,7 @@
             (message (format "%s deleted! If necessary, edit koushin.org." delete-topic-name)))
         nil))))
 
-(defun end-blog ()
+(defun blog-end ()
   "current-buffer が index.org の時に blog-mode を閉じる"
   (interactive)
   (if (string= "index.org" (buffer-name (current-buffer)))
