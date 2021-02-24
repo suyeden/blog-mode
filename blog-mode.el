@@ -62,11 +62,19 @@
 (ad-activate 'org-open-at-point)
 
 ;; この操作を行っておかないとC-c 'で行った編集が適用されない
-(defadvice org-edit-special (before my-change-keymap-blog-to-org ())
+(defadvice org-edit-special (around my-change-keymap-blog-to-org ())
   "ソースコードブロックを編集する前に blog-mode-map から org-mode-map に変更する"
-  (if (get-buffer "index.org")
-      (org-mode)
-    nil))
+  (let (blog-edit-flag)
+    (if (get-buffer "index.org")
+        (progn
+          (org-mode)
+          (setq blog-edit-flag (ignore-errors
+                                 ad-do-it
+                                 t))
+          (unless blog-edit-flag
+            (blog-mode)
+            (message "No such language mode: nil-mode")))
+      ad-do-it)))
 (ad-activate 'org-edit-special)
 ;;
 (defadvice org-edit-src-exit (after my-change-keymap-org-to-blog ())
