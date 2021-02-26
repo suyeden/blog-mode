@@ -219,7 +219,7 @@
 (defun blog-delete ()
   "現在行上にあるリンクを削除して必要ならorgファイルも削除する"
   (interactive)
-  (let (line-contents delete-file-name delete-topic-name)
+  (let (line-contents delete-file-name delete-topic-name file-or-dir)
     (catch 'foo-blog-delete
       (save-excursion
         (beginning-of-line)
@@ -229,11 +229,26 @@
           (goto-char (point-min))
           (if (re-search-forward "\\[\\[file:\\(.+\\)\.org\\]\\[\\(.+\\)\\]\\]" nil t)
               (progn
-                (setq delete-file-name (buffer-substring (match-beginning 1) (match-end 1)))
-                (setq delete-topic-name (buffer-substring (match-beginning 2) (match-end 2))))
+                (setq delete-file-name (buffer-substring-no-properties (match-beginning 1) (match-end 1)))
+                (setq delete-topic-name (buffer-substring-no-properties (match-beginning 2) (match-end 2))))
             (throw 'foo-blog-delete t))))
-      (if (y-or-n-p (format "Make sure there is no link in %s. Delete this topic ?" delete-topic-name))
+      (if (y-or-n-p (format "Make sure there is no link in [ %s ]. Delete this topic ?" delete-topic-name))
           (progn
+            (find-file (format "~/org/blog/%s.org" delete-file-name))
+            (goto-char (point-min))
+            (re-search-forward "\\*\\* \\[\\[file:index.org\\]\\[home\\]\\]" nil t)
+            (if (re-search-forward "\\[\\[file:.+\\]\\[.+\\]\\]" nil t)
+                (progn
+                  (kill-buffer (current-buffer))
+                  (message (format "There is a link in [ %s ] ! Can't delete this topic !" delete-topic-name))
+                  (throw 'foo-blog-delete t))
+              nil)
+            (goto-char (point-min))
+            (re-search-forward "+STARTUP" nil t)
+            (forward-line)
+            (forward-char 2)
+            (setq file-or-dir (buffer-substring-no-properties (point) (progn (end-of-line) (point))))
+            (kill-buffer (current-buffer))
             (if (y-or-n-p "Delete linked file too ?")
                 (progn
                   (delete-file (format "~/org/blog/%s.org" delete-file-name))
@@ -243,7 +258,20 @@
               nil)
             (beginning-of-line)
             (delete-region (point) (progn (forward-line) (point)))
-            (message (format "%s deleted! If necessary, edit koushin.org." delete-topic-name)))
+            (if (string= "file" (format "%s" file-or-dir))
+                (progn
+                  (if (file-exists-p "~/org/blog/koushin.org")
+                      (progn
+                        (find-file "~/org/blog/koushin.org")
+                        (goto-char (point-min))
+                        (re-search-forward (format "\\[\\[.*\\]\\[%s\\]\\]" delete-topic-name) nil t)
+                        (beginning-of-line)
+                        (delete-region (point) (progn (forward-line) (point)))
+                        (save-buffer)
+                        (kill-buffer (current-buffer)))
+                    nil))
+              nil)
+            (message (format "[ %s ] is deleted!" delete-topic-name)))
         nil))))
 
 (defun blog-rename ()
@@ -289,7 +317,7 @@
             (if (file-exists-p "~/org/blog/koushin.org")
                 (progn
                   (find-file "~/org/blog/koushin.org")
-                  (beginning-of-line)
+                  (goto-char (point-min))
                   (re-search-forward (format "\\[\\[.*\\]\\[%s\\]\\]" rename-topic-name) nil t)
                   (beginning-of-line)
                   (delete-region (point) (progn (forward-line) (point)))
@@ -302,7 +330,7 @@
                   (kill-buffer (current-buffer)))
               nil))
         nil)
-      (message (format "[ %s ] renamed [ %s ] !" rename-topic-name new-topic-name)))))
+      (message (format "[ %s ] is renamed [ %s ] !" rename-topic-name new-topic-name)))))
 
 (defun blog-end ()
   "current-buffer が index.org の時に blog-mode を閉じる"
