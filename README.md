@@ -91,6 +91,12 @@ You can use the key bindings and the functions below.
 
 
 <tr>
+<td class="org-left">C-c r</td>
+<td class="org-left">rename the topic (rename the link and the linked file)</td>
+</tr>
+
+
+<tr>
 <td class="org-left">C-M-d</td>
 <td class="org-left">delete the topic (delete the link and the linked file)</td>
 </tr>
