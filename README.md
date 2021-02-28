@@ -152,7 +152,7 @@ You can use the key bindings and the functions below.
 
 <tr>
 <td class="org-left">C-c M-s</td>
-<td class="org-left">insert leading whitespace from current-point to end-of-buffer</td>
+<td class="org-left">insert space at the beginning of the line within the region</td>
 </tr>
 
 
