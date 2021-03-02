@@ -262,7 +262,9 @@
                   (throw 'foo-blog-delete t))
               nil)
             (goto-char (point-min))
-            (re-search-forward "+STARTUP" nil t)
+            (if (re-search-forward "+STARTUP" nil t)
+                nil
+              (throw 'foo-blog-delete t))
             (forward-line)
             (forward-char 2)
             (setq file-or-dir (buffer-substring-no-properties (point) (progn (end-of-line) (point))))
@@ -296,7 +298,7 @@
   "現在行上にあるリンク名を編集して必要ならorgファイル名も編集する"
   (interactive)
   (let (line-contents rename-file-name rename-topic-name new-topic-name new-file-name file-or-dir now-time)
-    (catch 'foo-blog-delete
+    (catch 'foo-blog-rename
       (save-excursion
         (beginning-of-line)
         (setq line-contents (buffer-substring (point) (progn (end-of-line) (point))))
@@ -307,7 +309,7 @@
               (progn
                 (setq rename-file-name (buffer-substring-no-properties (match-beginning 1) (match-end 1)))
                 (setq rename-topic-name (buffer-substring-no-properties (match-beginning 2) (match-end 2))))
-            (throw 'foo-blog-delete t))))
+            (throw 'foo-blog-rename t))))
       (setq new-topic-name (read-string "New topic name ? : " (format "%s" rename-topic-name)))
       (setq new-file-name (read-string "New linked-file name ? : " (format "%s" rename-file-name)))
       (beginning-of-line)
@@ -324,7 +326,9 @@
       (delete-region (point) (progn (end-of-line) (point)))
       (insert (format "%s" new-topic-name))
       (goto-char (point-min))
-      (re-search-forward "+STARTUP" nil t)
+      (if (re-search-forward "+STARTUP" nil t)
+          nil
+        (throw 'foo-blog-rename t))
       (forward-line)
       (forward-char 2)
       (setq file-or-dir (buffer-substring-no-properties (point) (progn (end-of-line) (point))))
