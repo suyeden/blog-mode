@@ -22,7 +22,7 @@ Then, place `blog-mode.el` file in any directory on your computer like `~/.emacs
 
 When you want to start `blog-mode`, press `C-c b`. `/org/blog` directory will be created under your home directory.  
 `M-x blog-mode` can also be used to enable `blog-mode` on your current document.  
-You can see `help` with `C-c C-h`. To quit from `help`, type `q` and then press `Return` on mini-buffer.  
+You can see `help` with `C-c C-h`. To quit from `help`, type `y` on mini-buffer.  
 
 You can use the key bindings and the functions below.  
 
@@ -42,6 +42,18 @@ You can use the key bindings and the functions below.
 </thead>
 
 <tbody>
+<tr>
+<td class="org-left">C-c b</td>
+<td class="org-left">start blog-mode</td>
+</tr>
+
+
+<tr>
+<td class="org-left">C-c C-h</td>
+<td class="org-left">display help for blog-mode</td>
+</tr>
+
+
 <tr>
 <td class="org-left">C-c n</td>
 <td class="org-left">make a new topic (make a link)</td>
@@ -104,7 +116,7 @@ You can use the key bindings and the functions below.
 
 <tr>
 <td class="org-left">C-c x</td>
-<td class="org-left">export all org-files to HTML-files and return to the top page</td>
+<td class="org-left">export all visited and newly created org-files to HTML-files</td>
 </tr>
 
 
