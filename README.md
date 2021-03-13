@@ -2,6 +2,8 @@
 
 # blog-mode
 
+[![GitHub license](<https://img.shields.io/github/license/suyeden/blog-mode?color=blue>)](<https://github.com/suyeden/blog-mode/blob/master/LICENSE>)  
+
 `blog-mode` is a major mode for Emacs.  
 It enables you to easily take notes or make a personal wiki on your Emacs.  
 
