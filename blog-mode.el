@@ -58,7 +58,13 @@
 (defadvice org-open-at-point (after my-change-keymap ())
   "リンク先を開いた際にキーマップを blog-mode-map に変更する"
   (if (get-buffer "index.org")
-      (blog-mode)
+      (progn
+        (blog-mode)
+        (if (and (string-match ".+\.org" (buffer-name (current-buffer))) (= 1 (point)))
+            (if (re-search-forward "\*\* \\[\\[file:index.org\\]\\[home\\]\\]" nil t)
+                (forward-line 2)
+              nil)
+          nil))
     nil))
 (ad-activate 'org-open-at-point)
 
