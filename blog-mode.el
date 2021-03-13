@@ -17,6 +17,9 @@
 (define-key blog-mode-map "\C-\M-d" 'blog-delete)
 (define-key blog-mode-map "\C-cr" 'blog-rename)
 
+;;; blog-mode の有効無効判断のためのフラグ
+(defvar is-blog-mode-enabled nil)
+
 ;;; blog-mode (my new major-mode)
 (defun blog-mode ()
   "blog-mode"
@@ -43,6 +46,7 @@
 (defun start-blog ()
   "blog-modeを開く"
   (interactive)
+  (setq is-blog-mode-enabled t)
   (if (file-exists-p "~/org/blog/index.org")
       (progn
         (find-file "~/org/blog/index.org")
@@ -57,7 +61,7 @@
 
 (defadvice org-open-at-point (after my-change-keymap ())
   "リンク先を開いた際にキーマップを blog-mode-map に変更する"
-  (if (get-buffer "index.org")
+  (if (string= "t" (format "%s" is-blog-mode-enabled))
       (progn
         (blog-mode)
         (if (and (string-match ".+\.org" (buffer-name (current-buffer))) (= 1 (point)))
@@ -72,7 +76,7 @@
 (defadvice org-edit-special (around my-change-keymap-blog-to-org ())
   "ソースコードブロックを編集する前に blog-mode-map から org-mode-map に変更する"
   (let (blog-edit-flag)
-    (if (get-buffer "index.org")
+    (if (string= "t" (format "%s" is-blog-mode-enabled))
         (progn
           (org-mode)
           (setq blog-edit-flag (ignore-errors
@@ -86,14 +90,14 @@
 ;;
 (defadvice org-edit-src-exit (after my-change-keymap-org-to-blog ())
   "ソースコードブロックを編集した後に org-mode-map から blog-mode-map に変更する"
-  (if (get-buffer "index.org")
+  (if (string= "t" (format "%s" is-blog-mode-enabled))
       (blog-mode)
     nil))
 (ad-activate 'org-edit-src-exit)
 ;;
 (defadvice org-edit-src-abort (after my-change-keymap-abort-org-to-blog ())
   "ソースコードブロックの編集を破棄し、org-mode-map から blog-mode-map に変更する"
-  (if (get-buffer "index.org")
+  (if (string= "t" (format "%s" is-blog-mode-enabled))
       (blog-mode)
     nil))
 (ad-activate 'org-edit-src-abort)
@@ -411,7 +415,8 @@
               (kill-buffer (current-buffer)))
           nil)
         (save-buffer)
-        (kill-buffer (current-buffer)))
+        (kill-buffer (current-buffer))
+        (setq is-blog-mode-enabled nil))
     (message "you can't end blog-mode! go to index.org!")))
 
 (defun blog-help ()
