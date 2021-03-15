@@ -19,6 +19,8 @@
 
 ;;; blog-mode の有効無効判断のためのフラグ
 (defvar is-blog-mode-enabled nil)
+;;; 開いたブログ名を格納するリスト
+(defvar blog-open-list nil)
 
 ;;; blog-mode (my new major-mode)
 (defun blog-mode ()
@@ -41,12 +43,12 @@
   ;; 1. キーバインドに矢印キーを用いたい -> (local-set-key)
   ;; 2. local-set-key をしたいが、 blog-mode に対してキーバインドを追加したい
   ;; という理由のため、blog-mode が有効になったこのタイミングで設定する  
-  (local-set-key (kbd "C-c <C-left>") 'back-page))
+  (local-set-key (kbd "C-c <C-left>") 'blog-back-page))
 
 (defun start-blog ()
   "blog-modeを開く"
   (interactive)
-  (setq is-blog-mode-enabled t)
+  (setq is-blog-mode-enabled nil)
   (if (file-exists-p "~/org/blog/index.org")
       (progn
         (find-file "~/org/blog/index.org")
@@ -57,33 +59,55 @@
     (insert "#+TITLE: すえーでんの技術ブログ\n#+AUTHOR: suyeden\n#+EMAIL: \n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t\n#+STARTUP: showall\n** [[file:koushin.org][更新履歴]]\n\n------------------------------------------------------------------------------------------\n\n* Category\n\n\n------------------------------------------------------------------------------------------\n")
     (re-search-backward "* Category" nil t)
     (beginning-of-line))
-  (blog-mode))
+  (blog-mode)
+  (setq blog-open-list nil)
+  (setq blog-open-list (cons "index.org" blog-open-list)))
 
-(defadvice org-open-at-point (after my-change-keymap ())
-  "リンク先を開いた際にキーマップを blog-mode-map に変更する"
-  (if (string= "t" (format "%s" is-blog-mode-enabled))
-      (progn
-        (blog-mode)
-        (if (and (string-match ".+\.org" (buffer-name (current-buffer))) (= 1 (point)))
-            (if (re-search-forward "\*\* \\[\\[file:index.org\\]\\[home\\]\\]" nil t)
-                (forward-line 2)
-              nil)
-          nil))
-    nil))
+(defadvice org-open-at-point (around blog-open-at-point ())
+  "リンク先を開く際の操作"
+  (let (blog-current-buffer-name)
+    ;; リンク先を開く前に現在のモードが blog-mode であるか否かを記録
+    (if (string= "blog" (format "%s" mode-name))
+        (progn
+          (setq is-blog-mode-enabled t)
+          (setq blog-current-buffer-name (buffer-name (current-buffer))))
+      (setq is-blog-mode-enabled nil))
+    ;; org-open-at-point
+    ad-do-it
+    ;; リンク先を開いた後の操作
+    (if (and (string= "t" (format "%s" is-blog-mode-enabled))
+             (string-match ".+\.org" (buffer-name (current-buffer))))
+        (progn
+          ;; blog-mode の有効化
+          (blog-mode)
+          ;; 点線の下の行に移動
+          (if (and (= 1 (point))
+                   (re-search-forward "\*\* \\[\\[file:index.org\\]\\[home\\]\\]" nil t))
+              (forward-line 2)
+            nil)
+          ;; リンク先を開いた後に開いたファイル名を記録する
+          ;; リンクを開く前に記録を行うと、blog-back-page 操作によって最終的に index.org までリストから消えてしまう
+          (if (not (member (buffer-name (current-buffer)) blog-open-list))
+              (setq blog-open-list (cons (buffer-name (current-buffer)) blog-open-list))
+            nil))
+      nil)
+    (setq is-blog-mode-enabled nil)))
 (ad-activate 'org-open-at-point)
 
 ;; この操作を行っておかないとC-c 'で行った編集が適用されない
 (defadvice org-edit-special (around my-change-keymap-blog-to-org ())
   "ソースコードブロックを編集する前に blog-mode-map から org-mode-map に変更する"
   (let (blog-edit-flag)
-    (if (string= "t" (format "%s" is-blog-mode-enabled))
+    (if (string= "blog" (format "%s" mode-name))
         (progn
+          (setq is-blog-mode-enabled t)
           (org-mode)
           (setq blog-edit-flag (ignore-errors
                                  ad-do-it
                                  t))
           (unless blog-edit-flag
             (blog-mode)
+            (setq is-blog-mode-enabled nil)
             (message "No such language mode: nil-mode")))
       ad-do-it)))
 (ad-activate 'org-edit-special)
@@ -91,14 +115,18 @@
 (defadvice org-edit-src-exit (after my-change-keymap-org-to-blog ())
   "ソースコードブロックを編集した後に org-mode-map から blog-mode-map に変更する"
   (if (string= "t" (format "%s" is-blog-mode-enabled))
-      (blog-mode)
+      (progn
+        (blog-mode)
+        (setq is-blog-mode-enabled nil))
     nil))
 (ad-activate 'org-edit-src-exit)
 ;;
 (defadvice org-edit-src-abort (after my-change-keymap-abort-org-to-blog ())
   "ソースコードブロックの編集を破棄し、org-mode-map から blog-mode-map に変更する"
   (if (string= "t" (format "%s" is-blog-mode-enabled))
-      (blog-mode)
+      (progn
+        (blog-mode)
+        (setq is-blog-mode-enabled nil))
     nil))
 (ad-activate 'org-edit-src-abort)
 
@@ -110,17 +138,20 @@
   (blog-mode)
   (pop-to-buffer "*Completions*"))
 
-(defun back-page ()
+(defun blog-back-page ()
   "1つ前の画面に戻る"
   (interactive)
-  (catch 'flag
-    (if (string= "index.org" (buffer-name (current-buffer)))
+  (if (and (string= "index.org" (buffer-name (current-buffer)))
+           (string= "nil" (format "%s" (cdr blog-open-list))))
+      (message "if you want to end blog-mode, type 'C-c e' !")
+    (if (not (string= (buffer-name (current-buffer)) (car blog-open-list)))
         (progn
-          (message "if you want to end blog-mode, type 'C-c e' !")
-          (throw 'flag t))
-      nil)
-    (save-buffer)
-    (kill-buffer (current-buffer))))
+          (save-buffer)
+          (switch-to-buffer (car blog-open-list)))
+      (save-buffer)
+      (kill-buffer (current-buffer))
+      (switch-to-buffer (car (cdr blog-open-list)))
+      (setq blog-open-list (cdr blog-open-list)))))
 
 (defun blog-new ()
   "新しいブログトピックを作成する"
@@ -406,17 +437,19 @@
   "current-buffer が index.org の時に blog-mode を閉じる"
   (interactive)
   (if (string= "index.org" (buffer-name (current-buffer)))
-      (progn
-        (if (file-exists-p "~/org/blog/koushin.org")
-            (progn
-              (find-file "~/org/blog/koushin.org")
-              (blog-mode)
-              (save-buffer)
-              (kill-buffer (current-buffer)))
-          nil)
-        (save-buffer)
-        (kill-buffer (current-buffer))
-        (setq is-blog-mode-enabled nil))
+      (if (string= "nil" (format "%s" (cdr blog-open-list)))
+          (progn
+            (if (file-exists-p "~/org/blog/koushin.org")
+                (progn
+                  (find-file "~/org/blog/koushin.org")
+                  (blog-mode)
+                  (save-buffer)
+                  (kill-buffer (current-buffer)))
+              nil)
+            (save-buffer)
+            (kill-buffer (current-buffer))
+            (setq is-blog-mode-enabled nil))
+        (message "before end blog-mode, execute blog-back-page (C-c C-left) !"))
     (message "you can't end blog-mode! go to index.org!")))
 
 (defun blog-help ()
