@@ -76,13 +76,13 @@
     ad-do-it
     ;; リンク先を開いた後の操作
     (if (and (string= "t" (format "%s" is-blog-mode-enabled))
-             (string-match ".+\.org" (buffer-name (current-buffer))))
+             (string-match ".+org" (buffer-name (current-buffer))))
         (progn
           ;; blog-mode の有効化
           (blog-mode)
           ;; 点線の下の行に移動
           (if (and (= 1 (point))
-                   (re-search-forward "\*\* \\[\\[file:index.org\\]\\[home\\]\\]" nil t))
+                   (re-search-forward "\\*\\* \\[\\[file:index.org\\]\\[home\\]\\]" nil t))
               (forward-line 2)
             nil)
           ;; リンク先を開いた後に開いたファイル名を記録する
@@ -228,7 +228,7 @@
           (setq open-blog-list (cons "~/org/blog/index.org" open-blog-list))
           (setq current-point-list (cons (point) current-point-list))
           (find-file "~/org/blog/Export-list.txt")
-          (while (re-search-forward "^.+\.org$" nil t)
+          (while (re-search-forward "^.+org$" nil t)
             (find-file (format "%s" (buffer-substring-no-properties (match-beginning 0) (match-end 0))))
             (execute-kbd-macro (symbol-function 'auto-export-to-html))
             (kill-buffer (current-buffer)))
@@ -285,7 +285,7 @@
         (with-temp-buffer
           (insert (format "%s" line-contents))
           (goto-char (point-min))
-          (if (re-search-forward "\\[\\[file:\\(.+\\)\.org\\]\\[\\(.+\\)\\]\\]" nil t)
+          (if (re-search-forward "\\[\\[file:\\(.+\\)\\.org\\]\\[\\(.+\\)\\]\\]" nil t)
               (progn
                 (setq delete-file-name (buffer-substring-no-properties (match-beginning 1) (match-end 1)))
                 (setq delete-topic-name (buffer-substring-no-properties (match-beginning 2) (match-end 2))))
@@ -355,7 +355,7 @@
         (with-temp-buffer
           (insert (format "%s" line-contents))
           (goto-char (point-min))
-          (if (re-search-forward "\\[\\[file:\\(.+\\)\.org\\]\\[\\(.+\\)\\]\\]" nil t)
+          (if (re-search-forward "\\[\\[file:\\(.+\\)\\.org\\]\\[\\(.+\\)\\]\\]" nil t)
               (progn
                 (setq rename-file-name (buffer-substring-no-properties (match-beginning 1) (match-end 1)))
                 (setq rename-topic-name (buffer-substring-no-properties (match-beginning 2) (match-end 2))))
@@ -436,21 +436,38 @@
 (defun blog-end ()
   "current-buffer が index.org の時に blog-mode を閉じる"
   (interactive)
-  (if (string= "index.org" (buffer-name (current-buffer)))
-      (if (string= "nil" (format "%s" (cdr blog-open-list)))
-          (progn
-            (if (file-exists-p "~/org/blog/koushin.org")
-                (progn
-                  (find-file "~/org/blog/koushin.org")
-                  (blog-mode)
-                  (save-buffer)
-                  (kill-buffer (current-buffer)))
-              nil)
+  (let (blog-current-buffer-contents blog-current-point blog-window-start (blog-auto-save-files nil) (check-files (directory-files "~/org/blog")))
+    (if (y-or-n-p "Do you want to end blog-mode ?")
+        (progn
+          (setq blog-current-buffer-contents (buffer-substring (point-min) (point-max)))
+          (setq blog-current-point (point))
+          (setq blog-window-start (window-start))
+          (while blog-open-list
+            (switch-to-buffer (car blog-open-list))
             (save-buffer)
             (kill-buffer (current-buffer))
-            (setq is-blog-mode-enabled nil))
-        (message "before end blog-mode, execute blog-back-page (C-c C-left) !"))
-    (message "you can't end blog-mode! go to index.org!")))
+            (setq blog-open-list (cdr blog-open-list)))
+          (while check-files
+            (if (string-match "^#.+#$" (car check-files))
+                (setq blog-auto-save-files (cons (car check-files) blog-auto-save-files))
+              nil)
+            (setq check-files (cdr check-files)))
+          (if (not (string= "nil" (format "%s" blog-auto-save-files)))
+              (progn
+                (get-buffer-create "*Caution*")
+                (switch-to-buffer "*Caution*")
+                (delete-region (point-min) (point-max))
+                (insert (format "%s" blog-current-buffer-contents))
+                (goto-char blog-current-point)
+                (set-window-start (selected-window) blog-window-start)
+                (if (y-or-n-p "Do you want to delete auto save data?")
+                    (while blog-auto-save-files
+                      (delete-file (format "~/org/blog/%s" (car blog-auto-save-files)))
+                      (setq blog-auto-save-files (cdr blog-auto-save-files)))
+                  nil)
+                (kill-buffer "*Caution*"))
+            nil))
+      (message "Process killed"))))
 
 (defun blog-help ()
   "利用できるキーバインドを表示"
