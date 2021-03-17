@@ -219,32 +219,31 @@
 (defun all-export-to-html ()
   "Export-list.txt 中に記録されている orgファイル を HTMLファイル にエクスポートする"
   (interactive)
-  (if (y-or-n-p "Do you want to export all org-files to HTML-files? : ")
+  (if (y-or-n-p "Do you want to export all org-files to HTML-files ?")
       (progn
-        (let (open-blog-list current-point-list)
+        (let ((check-list blog-open-list) opening-list current-point-list)
           (save-buffer)
-          (while (not (string= "index.org" (buffer-name (current-buffer))))
-            (setq open-blog-list (cons (format "~/org/blog/%s" (buffer-name (current-buffer))) open-blog-list))
+          (while check-list
+            (switch-to-buffer (car check-list))
+            (setq opening-list (cons (format "~/org/blog/%s" (buffer-name (current-buffer))) opening-list))
             (setq current-point-list (cons (point) current-point-list))
-            (kill-buffer (current-buffer))
-            (save-buffer))
-          (setq open-blog-list (cons "~/org/blog/index.org" open-blog-list))
-          (setq current-point-list (cons (point) current-point-list))
+            (save-buffer)
+            (setq check-list (cdr check-list)))
           (find-file "~/org/blog/Export-list.txt")
           (while (re-search-forward "^.+org$" nil t)
             (find-file (format "%s" (buffer-substring-no-properties (match-beginning 0) (match-end 0))))
             (execute-kbd-macro (symbol-function 'auto-export-to-html))
             (kill-buffer (current-buffer)))
           (kill-buffer (current-buffer)) ; kill Export-list.txt
-          (while open-blog-list
-            (find-file (car open-blog-list))
+          (while opening-list
+            (find-file (car opening-list))
             (goto-char (car current-point-list))
             (blog-mode)
-            (setq open-blog-list (cdr open-blog-list))
+            (setq opening-list (cdr opening-list))
             (setq current-point-list (cdr current-point-list)))
           (delete-file "~/org/blog/Export-list.txt")
           (message "Done!")))
-    nil))
+    (message "Process killed")))
 
 (defun blog-insert-space ()
   "選択範囲内の行頭において、指定数分のスペースを挿入あるいは削除する"
