@@ -16,6 +16,7 @@
 (define-key blog-mode-map "\C-\M-i" 'blog-complete-symbol)
 (define-key blog-mode-map "\C-\M-d" 'blog-delete)
 (define-key blog-mode-map "\C-cr" 'blog-rename)
+(define-key blog-mode-map "\C-c\M-r" 'blog-restart)
 
 ;;; blog-mode の有効無効判断のためのフラグ
 (defvar is-blog-mode-enabled nil)
@@ -62,8 +63,8 @@
           (re-search-backward "\\* Category" nil t)
           (beginning-of-line))
         (blog-mode)
-        (setq blog-open-list nil)
-        (setq blog-open-list (cons "index.org" blog-open-list)))
+        (setq blog-open-list (cons "index.org" blog-open-list))
+        (message "Hello!"))
     (message "blog-mode has already been started!")))
 
 (defadvice org-open-at-point (around blog-open-at-point ())
@@ -469,8 +470,28 @@
                   nil)
                 (kill-buffer "*Caution*"))
             nil)
-          (setq blog-open-list nil))
+          (setq blog-open-list nil)
+          (message "Bye!"))
       (message "Process killed"))))
+
+(defun blog-restart ()
+  "blog-mode が一時的に保持している情報を破棄して起動し直す"
+  (interactive)
+  (if (y-or-n-p "Do you really want to restart blog-mode ?")
+      (if (not (string= "nil" (format "%s" blog-open-list)))
+          (progn
+            (while blog-open-list
+              (if (get-buffer (car blog-open-list))
+                  (progn
+                    (switch-to-buffer (car blog-open-list))
+                    (save-buffer)
+                    (kill-buffer (current-buffer)))
+                nil)
+              (setq blog-open-list (cdr blog-open-list)))
+            (setq blog-open-list nil)
+            (start-blog))
+        (start-blog))
+    (message "Process killed")))
 
 (defun blog-help ()
   "利用できるキーバインドを表示"
