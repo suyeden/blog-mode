@@ -16,7 +16,7 @@
 (define-key blog-mode-map "\C-\M-i" 'blog-complete-symbol)
 (define-key blog-mode-map "\C-\M-d" 'blog-delete)
 (define-key blog-mode-map "\C-cr" 'blog-rename)
-(define-key blog-mode-map "\C-c\M-r" 'blog-restart)
+(define-key global-map "\C-c\M-r" 'blog-restart)
 
 ;;; blog-mode の有効無効判断のためのフラグ
 (defvar is-blog-mode-enabled nil)
@@ -52,6 +52,23 @@
   (if (string= "nil" (format "%s" blog-open-list))
       (progn
         (setq is-blog-mode-enabled nil)
+        (if (file-exists-p "~/org/blog")
+            nil
+          (if (file-exists-p "~/org")
+              (make-directory "~/org/blog")
+            (make-directory "~/org")
+            (make-directory "~/org/blog")))
+        (if (file-exists-p "~/org/blog/css/style.css")
+            nil
+          (if (file-exists-p "~/org/blog/css")
+              (progn
+                (find-file "~/org/blog/css/style.css")
+                (save-buffer)
+                (kill-buffer (current-buffer)))
+            (make-directory "~/org/blog/css")
+            (find-file "~/org/blog/css/style.css")
+            (save-buffer)
+            (kill-buffer (current-buffer))))
         (if (file-exists-p "~/org/blog/index.org")
             (progn
               (find-file "~/org/blog/index.org")
@@ -59,7 +76,7 @@
               (re-search-forward "\\* Category" nil t)
               (beginning-of-line))
           (find-file "~/org/blog/index.org")
-          (insert "#+TITLE: すえーでんの技術ブログ\n#+AUTHOR: suyeden\n#+EMAIL: \n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t\n#+STARTUP: showall\n** [[file:koushin.org][更新履歴]]\n\n------------------------------------------------------------------------------------------\n\n* Category\n\n\n------------------------------------------------------------------------------------------\n")
+          (insert "#+TITLE: すえーでんの技術ブログ\n#+AUTHOR: suyeden\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t\n#+STARTUP: showall\n** [[file:koushin.org][更新履歴]]\n\n------------------------------------------------------------------------------------------\n\n* Category\n\n\n------------------------------------------------------------------------------------------\n")
           (re-search-backward "\\* Category" nil t)
           (beginning-of-line))
         (blog-mode)
@@ -186,7 +203,7 @@
           (insert (format "[[file:%s.org][%s]]" real-name blog-name))
           (backward-char)
           (find-file (format "~/org/blog/%s.org" real-name))
-          (insert (format "#+TITLE: %s\n#+EMAIL: \n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n# file\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n" blog-name))
+          (insert (format "#+TITLE: %s\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n# file\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n" blog-name))
           (blog-mode)
           (save-buffer)
           (kill-buffer (current-buffer))
@@ -203,7 +220,7 @@
                 (kill-buffer (current-buffer)))
             (find-file "~/org/blog/koushin.org")
             (setq now-time (format-time-string "%Y/%m/%d(%a)" (current-time)))
-            (insert (format "#+TITLE: 更新履歴\n#+EMAIL: \n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n*** %s [[file:%s.org][%s]] を作成しました。" now-time real-name blog-name))
+            (insert (format "#+TITLE: 更新履歴\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n*** %s [[file:%s.org][%s]] を作成しました。" now-time real-name blog-name))
             (blog-mode)
             (save-buffer)
             (kill-buffer (current-buffer))))
@@ -211,7 +228,7 @@
           (progn
             (insert (format "[[file:%s.org][%s]]" real-name blog-name))
             (find-file (format "~/org/blog/%s.org" real-name))
-            (insert (format "#+TITLE: %s\n#+EMAIL: \n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n# directory\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n" blog-name))
+            (insert (format "#+TITLE: %s\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n# directory\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n" blog-name))
             (blog-mode)
             (save-buffer)
             (kill-buffer (current-buffer)))
