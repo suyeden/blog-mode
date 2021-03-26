@@ -22,7 +22,8 @@ Then, place `blog-mode.el` file in any directory on your computer like `~/.emacs
 
 ## Usage
 
-When you want to start `blog-mode`, press `C-c b`. `/org/blog` directory will be created under your home directory.  
+When you want to start `blog-mode`, press `C-c b`.  
+`/org/blog` directory will be created under your home directory and `blog-mode` related files will be created here.  
 `M-x blog-mode` can also be used to enable `blog-mode` on your current document.  
 You can see `help` with `C-c C-h`. To quit from `help`, type `y` on mini-buffer.  
 
@@ -57,8 +58,14 @@ You can use the key bindings and the functions below.
 
 
 <tr>
+<td class="org-left">C-c M-r</td>
+<td class="org-left">Restart blog-mode (Refresh blog-mode)</td>
+</tr>
+
+
+<tr>
 <td class="org-left">C-c n</td>
-<td class="org-left">Make a new topic (make a link)</td>
+<td class="org-left">Make a new topic (Make a link)</td>
 </tr>
 
 
@@ -88,7 +95,7 @@ You can use the key bindings and the functions below.
 
 <tr>
 <td class="org-left">C-c C-o</td>
-<td class="org-left">Open the topic (jump to the link destination)</td>
+<td class="org-left">Open the topic (Jump to the link destination)</td>
 </tr>
 
 
@@ -106,25 +113,19 @@ You can use the key bindings and the functions below.
 
 <tr>
 <td class="org-left">C-c r</td>
-<td class="org-left">Rename the topic (rename the link and the linked file)</td>
+<td class="org-left">Rename the topic (Rename the link and the linked file)</td>
 </tr>
 
 
 <tr>
 <td class="org-left">C-M-d</td>
-<td class="org-left">Delete the topic (delete the link and the linked file)</td>
+<td class="org-left">Delete the topic (Delete the link and the linked file)</td>
 </tr>
 
 
 <tr>
 <td class="org-left">C-c x</td>
 <td class="org-left">Export all visited and newly created org-files to HTML-files</td>
-</tr>
-
-
-<tr>
-<td class="org-left">C-c M-r</td>
-<td class="org-left">Restart blog-mode</td>
 </tr>
 
 
@@ -189,5 +190,8 @@ You can use the key bindings and the functions below.
 </tbody>
 </table>
 
-And also, you can use most of the key bindings and the syntax of `Org-mode` in this mode.  
+In addition, most of the key bindings and the syntax of `Org-mode` can be used in this mode.  
+
+To attach a stylesheet to exported HTML files, edit `~/org/blog/css/style.css`.  
+When you want to change your blog's title (`#+TITLE` of `index.org`), author's name, and your language, edit `index.org` directly.  
 
