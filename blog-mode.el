@@ -22,6 +22,8 @@
 (defvar is-blog-mode-enabled nil)
 ;;; 開いたブログ名を格納するリスト
 (defvar blog-open-list nil)
+;;; ブログの記述言語を記録
+(defvar blog-lang nil)
 
 ;;; blog-mode (my new major-mode)
 (defun blog-mode ()
@@ -52,6 +54,7 @@
   (if (string= "nil" (format "%s" blog-open-list))
       (progn
         (setq is-blog-mode-enabled nil)
+        (setq blog-lang nil)
         (if (file-exists-p "~/org/blog")
             nil
           (if (file-exists-p "~/org")
@@ -73,12 +76,26 @@
             (progn
               (find-file "~/org/blog/index.org")
               (goto-char (point-min))
+              (save-excursion
+                (re-search-forward "+LANGUAGE: " nil t)
+                (setq blog-lang (buffer-substring-no-properties (point) (progn (end-of-line) (point)))))
               (re-search-forward "\\* Category" nil t)
               (beginning-of-line))
-          (find-file "~/org/blog/index.org")
-          (insert "#+TITLE: すえーでんの技術ブログ\n#+AUTHOR: suyeden\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t\n#+STARTUP: showall\n** [[file:koushin.org][更新履歴]]\n\n------------------------------------------------------------------------------------------\n\n* Category\n\n\n------------------------------------------------------------------------------------------\n")
-          (re-search-backward "\\* Category" nil t)
-          (beginning-of-line))
+          (let (blog-title blog-author-name)
+            (setq blog-title (read-string "Your blog title ? : "))
+            (setq blog-author-name (read-string "Author's name ? : "))
+            (setq blog-lang (read-string "Your language ? : " "ja"))
+            (find-file "~/org/blog/index.org")
+            (insert (format "#+TITLE: %s\n#+AUTHOR: %s\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: %s\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t\n#+STARTUP: showall\n** [[file:Blog_Update_History.org][Update History]]\n\n------------------------------------------------------------------------------------------\n\n* Category\n\n\n------------------------------------------------------------------------------------------\n" blog-title blog-author-name blog-lang))
+            (re-search-backward "\\* Category" nil t)
+            (beginning-of-line)))
+        (if (file-exists-p "~/org/blog/Blog_Update_History.org")
+            nil
+          (find-file "~/org/blog/Blog_Update_History.org")
+          (insert (format "#+TITLE: Update History\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: %s\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n" blog-lang))
+          (blog-mode) ; Export-list.txt に記録するため
+          (save-buffer)
+          (kill-buffer (current-buffer)))
         (blog-mode)
         (setq blog-open-list (cons "index.org" blog-open-list))
         (message "Hello!"))
@@ -203,32 +220,24 @@
           (insert (format "[[file:%s.org][%s]]" real-name blog-name))
           (backward-char)
           (find-file (format "~/org/blog/%s.org" real-name))
-          (insert (format "#+TITLE: %s\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n# file\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n" blog-name))
+          (insert (format "#+TITLE: %s\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: %s\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n# file\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n" blog-name blog-lang))
           (blog-mode)
           (save-buffer)
           (kill-buffer (current-buffer))
-          (if (file-exists-p "~/org/blog/koushin.org")
-              (progn
-                (find-file "~/org/blog/koushin.org")
-                (setq now-time (format-time-string "%Y/%m/%d(%a)" (current-time)))
-                (goto-char (point-min))
-                (re-search-forward "^\\*\\*\\* " nil t)
-                (beginning-of-line)
-                (insert (format "*** %s [[file:%s.org][%s]] を作成しました。\n" now-time real-name blog-name))
-                (blog-mode)
-                (save-buffer)
-                (kill-buffer (current-buffer)))
-            (find-file "~/org/blog/koushin.org")
-            (setq now-time (format-time-string "%Y/%m/%d(%a)" (current-time)))
-            (insert (format "#+TITLE: 更新履歴\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n*** %s [[file:%s.org][%s]] を作成しました。" now-time real-name blog-name))
-            (blog-mode)
-            (save-buffer)
-            (kill-buffer (current-buffer))))
+          (find-file "~/org/blog/Blog_Update_History.org")
+          (setq now-time (format-time-string "%Y/%m/%d" (current-time)))
+          (goto-char (point-min))
+          (re-search-forward "\\*\\* \\[\\[file:index.org\\]\\[home\\]\\]" nil t)
+          (forward-line 2)
+          (insert (format "*** %s - [[file:%s.org][%s]]\n" now-time real-name blog-name))
+          (blog-mode)
+          (save-buffer)
+          (kill-buffer (current-buffer)))
       (if (or (string= f-or-d "directory") (string= f-or-d "d"))
           (progn
             (insert (format "[[file:%s.org][%s]]" real-name blog-name))
             (find-file (format "~/org/blog/%s.org" real-name))
-            (insert (format "#+TITLE: %s\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: ja\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n# directory\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n" blog-name))
+            (insert (format "#+TITLE: %s\n#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\"/>\n#+LANGUAGE: %s\n#+OPTIONS: toc:nil num:nil author:nil creator:nil LaTeX:t \\n:t\n#+STARTUP: showall\n# directory\n* \n------------------------------------------------------------------------------------------\n** [[file:index.org][home]]\n------------------------------------------------------------------------------------------\n" blog-name blog-lang))
             (blog-mode)
             (save-buffer)
             (kill-buffer (current-buffer)))
@@ -340,9 +349,9 @@
             (delete-region (point) (progn (forward-line) (point)))
             (if (string= "file" (format "%s" file-or-dir))
                 (progn
-                  (if (file-exists-p "~/org/blog/koushin.org")
+                  (if (file-exists-p "~/org/blog/Blog_Update_History.org")
                       (progn
-                        (find-file "~/org/blog/koushin.org")
+                        (find-file "~/org/blog/Blog_Update_History.org")
                         (goto-char (point-min))
                         (re-search-forward (format "\\[\\[.*\\]\\[%s\\]\\]" delete-topic-name) nil t)
                         (beginning-of-line)
@@ -380,8 +389,8 @@
                 (setq rename-file-name (buffer-substring-no-properties (match-beginning 1) (match-end 1)))
                 (setq rename-topic-name (buffer-substring-no-properties (match-beginning 2) (match-end 2))))
             (throw 'foo-blog-rename t))))
-      (setq new-topic-name (read-string "New topic name ? : " (format "%s" rename-topic-name)))
-      (setq new-file-name (read-string "New linked-file name ? : " (format "%s" rename-file-name)))
+      (setq new-topic-name (read-string "New topic's name ? : " (format "%s" rename-topic-name)))
+      (setq new-file-name (read-string "New linked-file's name ? : " (format "%s" rename-file-name)))
       (beginning-of-line)
       (re-search-forward "\\[" nil t)
       (re-search-backward "\\[" nil t)
@@ -407,9 +416,9 @@
       (kill-buffer (current-buffer))
       (if (string= "file" (format "%s" file-or-dir))
           (progn
-            (if (file-exists-p "~/org/blog/koushin.org")
+            (if (file-exists-p "~/org/blog/Blog_Update_History.org")
                 (progn
-                  (find-file "~/org/blog/koushin.org")
+                  (find-file "~/org/blog/Blog_Update_History.org")
                   (goto-char (point-min))
                   (re-search-forward (format "\\[\\[.*\\]\\[%s\\]\\]" rename-topic-name) nil t)
                   (beginning-of-line)
@@ -417,8 +426,8 @@
                   (goto-char (point-min))
                   (re-search-forward "^\\*\\*\\* " nil t)
                   (beginning-of-line)
-                  (setq now-time (format-time-string "%Y/%m/%d(%a)" (current-time)))      
-                  (insert (format "*** %s [[file:%s.org][%s]] を作成しました。\n" now-time new-file-name new-topic-name))
+                  (setq now-time (format-time-string "%Y/%m/%d" (current-time)))      
+                  (insert (format "*** %s - [[file:%s.org][%s]]\n" now-time new-file-name new-topic-name))
                   (blog-mode)
                   (save-buffer)
                   (kill-buffer (current-buffer)))
@@ -436,7 +445,7 @@
       (message (format "[ %s ( %s.org ) ] is renamed [ %s ( %s.org ) ] !" rename-topic-name rename-file-name new-topic-name new-file-name)))))
 
 (defun blog-visited-record (filename)
-  "Export-list.txt に現在バッファのファイル名を記録する"
+  "Export-list.txt に現在のバッファのファイル名を記録する"
     (find-file "~/org/blog/Export-list.txt")
     (goto-char (point-min))
     (if (re-search-forward (format "%s" filename) nil t)
@@ -494,8 +503,8 @@
 (defun blog-restart ()
   "blog-mode が一時的に保持している情報を破棄して起動し直す"
   (interactive)
-  (if (y-or-n-p "Do you really want to restart blog-mode ?")
-      (if (not (string= "nil" (format "%s" blog-open-list)))
+  (if (not (string= "nil" (format "%s" blog-open-list)))
+      (if (y-or-n-p "Do you really want to restart blog-mode ?")
           (progn
             (while blog-open-list
               (if (get-buffer (car blog-open-list))
@@ -507,8 +516,8 @@
               (setq blog-open-list (cdr blog-open-list)))
             (setq blog-open-list nil)
             (start-blog))
-        (start-blog))
-    (message "Process killed")))
+        (message "Process killed"))
+    (start-blog)))
 
 (defun blog-help ()
   "利用できるキーバインドを表示"
@@ -516,7 +525,10 @@
   (get-buffer-create "*blog-help*")
   (switch-to-buffer "*blog-help*")
   (delete-region (point-min) (point-max))
-  (insert " C-c n : Make a new topic (Make a link)\n C-c C-l : Insert a stored-link\n M-<RET> : Insert a new heading\n <M-left> or <M-right> : Change the heading level\n <M-Up> or <M-Down> : Rearrange the list\n C-c C-o : Open the topic (Jump to the link destination)\n C-c <C-left> : Go back to previous page\n C-c C-e h H/h/o : Export current-buffer's org-file to HTML-file\n C-c r : Rename the topic (Rename the link and the linked file)\n C-M-d : Delete the topic (Delete the link and the linked file)\n C-c x : Export all visited and newly created org-files to HTML-files\n C-c M-r : Restart blog-mode\n C-c e : Close blog-mode\n\n S-<TAB> or C-u C-i : Fold all subtrees up to their root level\n <TAB> or C-i : Fold the current subtree up to its root level\n C-c C-, : Insert a code block\n C-c ' : Edit a source code block\n C-c C-c : Execute a source code block\n C-M-i : Display a list of supported languages in the source code block\n C-c M-s : Insert space at the beginning of the line within the region\n C-j : Start a new line considering leading whitespace\n C-c C-n/p : Move to next/previous heading\n----------------------------------------------------------------------\n < Syntax note >\n\n - : a list without number\n 1. : a list with number\n (C-c C-c : Renumber the list)\n (C-c - : Change the format of the list)\n\n *bold*\n /italic/\n _underline_\n +strikethrough+\n ~inline code~\n ----- : horizontal rule")
+  (insert " C-c M-r : Restart blog-mode (Refresh blog-mode)\n C-c n : Make a new topic (Make a link)\n C-c C-l : Insert a stored-link\n M-<RET> : Insert a new heading\n <M-left> or <M-right> : Change the heading level\n <M-Up> or <M-Down> : Rearrange the list\n C-c C-o : Open the topic (Jump to the link destination)\n C-c <C-left> : Go back to previous page\n C-c C-e h H/h/o : Export current-buffer's org-file to HTML-file\n C-c r : Rename the topic (Rename the link and the linked file)\n C-M-d : Delete the topic (Delete the link and the linked file)\n C-c x : Export all visited and newly created org-files to HTML-files\n C-c e : Close blog-mode\n\n S-<TAB> or C-u C-i : Fold all subtrees up to their root level\n <TAB> or C-i : Fold the current subtree up to its root level\n C-c C-, : Insert a code block\n C-c ' : Edit a source code block\n C-c C-c : Execute a source code block\n C-M-i : Display a list of supported languages in the source code block\n C-c M-s : Insert space at the beginning of the line within the region\n C-j : Start a new line considering leading whitespace\n C-c C-n/p : Move to next/previous heading\n----------------------------------------------------------------------\n < Syntax note >\n\n - : a list without number\n 1. : a list with number\n (C-c C-c : Renumber the list)\n (C-c - : Change the format of the list)\n\n *bold*\n /italic/\n _underline_\n +strikethrough+\n ~inline code~\n ----- : horizontal rule")
   (while (not (y-or-n-p "Quit from Help ?"))
     nil)
   (kill-buffer "*blog-help*"))
+
+;;; 全ての org ファイルを HTML にエクスポートする関数
+;; (let (x y) (with-temp-buffer (insert (format "%s" (pwd))) (goto-char (point-min)) (re-search-forward "Directory \\(.+\\)") (setq y (buffer-substring (match-beginning 1) (match-end 1)))) (cd "~/org/blog") (setq x (directory-files "~/org/blog/")) (message "Exporting...") (while x (if (string-match ".+\\.org" (car x)) (progn (find-file (car x)) (execute-kbd-macro (symbol-function 'auto-export-to-html)) (kill-buffer (current-buffer))) nil) (setq x (cdr x))) (cd (format "%s" y)) (message "Done!"))
