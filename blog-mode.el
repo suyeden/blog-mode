@@ -275,13 +275,15 @@
 (defun blog-insert-space ()
   "選択範囲内の行頭において、指定数分のスペースを挿入あるいは削除する"
   (interactive)
-  (let (space-count (blog-region-end (make-marker)))
+  (let (space-count (blog-region-end (make-marker)) (blog-current-point (make-marker)))
     (if (use-region-p)
         (progn
           (setq space-count (read-string "How many spaces ? : "))
           (setq space-count (string-to-number space-count))
           (set-marker blog-region-end (region-end))
-          (if (< 0 space-count)
+          (set-marker blog-current-point (point))
+          (catch 'blog-insert-space-finish
+            (if (< 0 space-count)
               (progn
                 (goto-char (region-beginning))
                 (beginning-of-line)
@@ -291,7 +293,9 @@
                       (insert " ")
                       (setq i (1+ i))))
                   (forward-line)
-                  (beginning-of-line)))
+                  (if (= (point) (point-max))
+                      (throw 'blog-insert-space-finish t)
+                    nil)))
             ;; if space-count < 0
             (setq space-count (* -1 space-count))
             (goto-char (region-beginning))
@@ -299,7 +303,11 @@
             (while (<= (point) (marker-position blog-region-end))
               (delete-char space-count)
               (forward-line)
-              (beginning-of-line)))
+              (if (= (point) (point-max))
+                  (throw 'blog-insert-space-finish t)
+                nil))))
+          (goto-char (marker-position blog-current-point))
+          (set-marker blog-current-point nil)
           (set-marker blog-region-end nil))
       nil)))
 
