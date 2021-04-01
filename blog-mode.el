@@ -463,11 +463,15 @@
       (save-buffer))
     (kill-buffer (current-buffer)))
 
-(defadvice save-buffer (after blog-save-buffer)
-  "ファイルを訪れた後、あるいは新しく作成した後にそのファイル名を Export-list.txt に記録する"
+(defadvice save-buffer (around blog-save-buffer)
+  "編集した、あるいは新規に作成したファイル名を Export-list.txt に記録する"
   (if (string= "blog" (format "%s" mode-name))
-      (blog-visited-record (format "~/org/blog/%s" (buffer-name (current-buffer))))
-    nil))
+      (if (string= "t" (buffer-modified-p (current-buffer)))
+          (progn
+            (blog-visited-record (format "~/org/blog/%s" (buffer-name (current-buffer))))
+            ad-do-it)
+        ad-do-it)
+    ad-do-it))
 (ad-activate 'save-buffer)
 
 (defun blog-end ()
