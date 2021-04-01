@@ -125,7 +125,7 @@ You can use the key bindings and the functions below.
 
 <tr>
 <td class="org-left">C-c x</td>
-<td class="org-left">Export all visited and newly created org-files to HTML-files</td>
+<td class="org-left">Export all modified and newly created org-files to HTML-files</td>
 </tr>
 
 
