@@ -469,13 +469,16 @@
 
 (defadvice save-buffer (around blog-save-buffer)
   "編集した、あるいは新規に作成したファイル名を Export-list.txt に記録する"
-  (if (string= "blog" (format "%s" mode-name))
-      (if (string= "t" (buffer-modified-p (current-buffer)))
+  (if (string= "t" (format "%s" (buffer-modified-p)))
+      (if (string= "blog" (format "%s" mode-name))
           (progn
             (blog-modified-record (format "~/org/blog/%s" (buffer-name (current-buffer))))
             ad-do-it)
         ad-do-it)
-    ad-do-it))
+    (if (string= "blog" (format "%s" mode-name))
+        ad-do-it
+      ad-do-it
+      (message "(No changes need to be saved)"))))
 (ad-activate 'save-buffer)
 
 (defun blog-end ()
