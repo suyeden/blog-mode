@@ -250,31 +250,33 @@
 (defun all-export-to-html ()
   "Export-list.txt 中に記録されている orgファイル を HTMLファイル にエクスポートする"
   (interactive)
-  (if (y-or-n-p "Do you want to export all org-files to HTML-files ?")
-      (progn
-        (let ((check-list blog-open-list) opening-list current-point-list)
-          (save-buffer)
-          (while check-list
-            (switch-to-buffer (car check-list))
-            (setq opening-list (cons (format "~/org/blog/%s" (buffer-name (current-buffer))) opening-list))
-            (setq current-point-list (cons (point) current-point-list))
-            (save-buffer)
-            (setq check-list (cdr check-list)))
-          (find-file "~/org/blog/Export-list.txt")
-          (while (re-search-forward "^.+org$" nil t)
-            (find-file (format "%s" (buffer-substring-no-properties (match-beginning 0) (match-end 0))))
-            (execute-kbd-macro (symbol-function 'auto-export-to-html))
-            (kill-buffer (current-buffer)))
-          (kill-buffer (current-buffer)) ; kill Export-list.txt
-          (while opening-list
-            (find-file (car opening-list))
-            (goto-char (car current-point-list))
-            (blog-mode)
-            (setq opening-list (cdr opening-list))
-            (setq current-point-list (cdr current-point-list)))
-          (delete-file "~/org/blog/Export-list.txt")
-          (message "Done!")))
-    (message "Process killed")))
+  (if (file-exists-p "~/org/blog/Export-list.txt")
+      (if (y-or-n-p "Do you want to export all org-files to HTML-files ?")
+          (progn
+            (let ((check-list blog-open-list) opening-list current-point-list)
+              (save-buffer)
+              (while check-list
+                (switch-to-buffer (car check-list))
+                (setq opening-list (cons (format "~/org/blog/%s" (buffer-name (current-buffer))) opening-list))
+                (setq current-point-list (cons (point) current-point-list))
+                (save-buffer)
+                (setq check-list (cdr check-list)))
+              (find-file "~/org/blog/Export-list.txt")
+              (while (re-search-forward "^.+org$" nil t)
+                (find-file (format "%s" (buffer-substring-no-properties (match-beginning 0) (match-end 0))))
+                (execute-kbd-macro (symbol-function 'auto-export-to-html))
+                (kill-buffer (current-buffer)))
+              (kill-buffer (current-buffer)) ; kill Export-list.txt
+              (while opening-list
+                (find-file (car opening-list))
+                (goto-char (car current-point-list))
+                (blog-mode)
+                (setq opening-list (cdr opening-list))
+                (setq current-point-list (cdr current-point-list)))
+              (delete-file "~/org/blog/Export-list.txt")
+              (message "Done!")))
+        (message "Process killed"))
+    (message "No files need to be exported!")))
 
 (defun blog-insert-space ()
   "選択範囲内の行頭において、指定数分のスペースを挿入あるいは削除する"
@@ -540,17 +542,67 @@
         (message "Process killed"))
     (start-blog)))
 
+;;; blog-help における mini-buffer 用のキーマップ
+;; keymap
+(defvar blog-help-map (make-keymap))
+;; define-key
+(define-key blog-help-map "n" 'blog-help-next)
+(define-key blog-help-map "p" 'blog-help-previous)
+(define-key blog-help-map "q" 'blog-help-quit)
+(suppress-keymap blog-help-map)
+;; blog-help から抜けるためのフラグ
+(defvar blog-help-flag nil)
+;;
+(defun blog-help-next ()
+  "*blog-help* バッファをスクロールアップする"
+  (interactive)
+  (let (help-next-error-flag)
+    (select-window (get-buffer-window "*blog-help*"))
+    (setq help-next-error-flag (ignore-errors
+                                 (scroll-up-command)
+                                 (select-window (active-minibuffer-window))))
+    (unless help-next-error-flag
+      (select-window (active-minibuffer-window)))))
+(defun blog-help-previous ()
+  "*blog-help* バッファをスクロールダウンする"
+  (interactive)
+  (let (help-previous-error-flag)
+    (select-window (get-buffer-window "*blog-help*"))
+    (setq help-previous-error-flag (ignore-errors
+                                     (scroll-down-command)
+                                     (select-window (active-minibuffer-window))))
+    (unless help-previous-error-flag
+      (select-window (active-minibuffer-window)))))
+(defun blog-help-quit ()
+  "blog-help から抜ける"
+  (interactive)
+  (setq blog-help-flag t)
+  ;; exit-minibuffer が無いと抜けられない
+  ;; blog-help のループから抜けられても、mini-buffer から出ることができない
+  (exit-minibuffer))
+
 (defun blog-help ()
   "利用できるキーバインドを表示"
+  ;; blog-help内のループ と mini-bufferからの脱出 の2つを意識する
   (interactive)
+  (setq blog-help-flag nil)
   (get-buffer-create "*blog-help*")
   (switch-to-buffer "*blog-help*")
-  (delete-region (point-min) (point-max))
-  (insert " C-c M-r : Restart blog-mode (Refresh blog-mode)\n C-c n : Make a new topic (Make a link)\n C-c C-l : Insert a stored-link\n M-<RET> : Insert a new heading\n <M-left> or <M-right> : Change the heading level\n <M-Up> or <M-Down> : Rearrange the list\n C-c C-o : Open the topic (Jump to the link destination)\n C-c <C-left> : Go back to previous page\n C-c C-e h H/h/o : Export current-buffer's org-file to HTML-file\n C-c r : Rename the topic (Rename the link and the linked file)\n C-M-d : Delete the topic (Delete the link and the linked file)\n C-c x : Export all modified and newly created org-files to HTML-files\n C-c e : Close blog-mode\n\n S-<TAB> or C-u C-i : Fold all subtrees up to their root level\n <TAB> or C-i : Fold the current subtree up to its root level\n C-c C-, : Insert a code block\n C-c ' : Edit a source code block\n C-c C-c : Execute a source code block\n C-M-i : Display a list of supported languages in the source code block\n C-c M-s : Insert space at the beginning of the line within the region\n C-j : Start a new line considering leading whitespace\n C-c C-n/p : Move to next/previous heading\n----------------------------------------------------------------------\n < Syntax note >\n\n - : a list without number\n 1. : a list with number\n (C-c C-c : Renumber the list)\n (C-c - : Change the format of the list)\n\n *bold*\n /italic/\n _underline_\n +strikethrough+\n ~inline code~\n ----- : horizontal rule")
-  (while (not (y-or-n-p "Quit from Help ?"))
+  (if (string= "t" (format "%s" buffer-read-only))
+      (toggle-read-only)
     nil)
-  (kill-buffer "*blog-help*")
-  (message "Quit"))
+  (delete-region (point-min) (point-max))
+  (insert " C-c M-r : Restart blog-mode (Refresh blog-mode)\n M-RET : Insert a new heading\n C-c n : Make a new topic (Make a link)\n C-c C-o : Open the topic (Jump to the link destination)\n C-c C-LEFT : Go back to previous page\n C-c r : Rename the topic (Rename the link and the linked file)\n C-M-d : Delete the topic (Delete the link and the linked file)\n C-c C-e h H/h/o : Export current-buffer's org-file to HTML-file\n C-c x : Export all modified and newly created org-files to HTML-files\n C-c e : Close blog-mode\n M-LEFT or M-RIGHT : Change the heading level\n M-UP or M-DOWN : Rearrange the list\n C-c C-l : Insert a stored-link\n\n S-TAB or C-u C-i : Fold all subtrees up to their root level\n TAB or C-i : Fold the current subtree up to its root level\n C-c C-, : Insert a code block\n C-c ' : Edit a source code block\n C-M-i : Display a list of supported languages in the source code block\n C-c M-s : Insert space at the beginning of the line within the region\n C-j : Start a new line considering leading whitespace\n C-c C-n/p : Move to next/previous heading\n\n----------------------------------------------------------------------\n < Syntax note >\n\n - : a list without number\n 1. : a list with number\n (C-c C-c : Renumber the list)\n (C-c - : Change the format of the list)\n\n *bold*\n /italic/\n _underline_\n +strikethrough+\n ~inline code~\n ----- : horizontal rule")
+  (goto-char (point-min))
+  (toggle-read-only)
+  (catch 'help-quit-flag
+    (while t
+      (read-from-minibuffer "Scroll Up (n), Scroll Down (p), Quit (q) : " nil blog-help-map)
+      (if (string= "t" (format "%s" blog-help-flag))
+          (progn
+            (kill-buffer "*blog-help*")
+            (throw 'help-quit-flag t))
+        nil))))
 
 ;;; 全ての org ファイルを HTML にエクスポートする関数
 ;; (let (x y) (with-temp-buffer (insert (format "%s" (pwd))) (goto-char (point-min)) (re-search-forward "Directory \\(.+\\)") (setq y (buffer-substring (match-beginning 1) (match-end 1)))) (cd "~/org/blog") (setq x (directory-files "~/org/blog/")) (message "Exporting...") (while x (if (string-match ".+\\.org" (car x)) (progn (find-file (car x)) (execute-kbd-macro (symbol-function 'auto-export-to-html)) (kill-buffer (current-buffer))) nil) (setq x (cdr x))) (cd (format "%s" y)) (message "Done!"))

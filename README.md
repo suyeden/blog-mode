@@ -23,9 +23,9 @@ Then, place `blog-mode.el` file in any directory on your computer like `~/.emacs
 ## Usage
 
 When you want to start `blog-mode`, press `C-c b`.  
-`/org/blog` directory will be created under your home directory and `blog-mode` related files will be created here.  
+`/org/blog` directory will be created under your home directory and blog-mode related files will be created here.  
 `M-x blog-mode` can also be used to enable `blog-mode` on your current document.  
-You can see `help` with `C-c C-h`. To quit from `help`, type `y` on mini-buffer.  
+You can see `help` with `C-c C-h`. To quit from `help`, type `q`.  
 
 You can use the key bindings and the functions below.  
 
@@ -64,32 +64,14 @@ You can use the key bindings and the functions below.
 
 
 <tr>
-<td class="org-left">C-c n</td>
-<td class="org-left">Make a new topic (Make a link)</td>
-</tr>
-
-
-<tr>
-<td class="org-left">C-c C-l</td>
-<td class="org-left">Insert a stored-link</td>
-</tr>
-
-
-<tr>
 <td class="org-left">M-RET</td>
 <td class="org-left">Insert a new heading</td>
 </tr>
 
 
 <tr>
-<td class="org-left">M-left or M-right</td>
-<td class="org-left">Change the heading level</td>
-</tr>
-
-
-<tr>
-<td class="org-left">M-Up or M-Down</td>
-<td class="org-left">Rearrange the list</td>
+<td class="org-left">C-c n</td>
+<td class="org-left">Make a new topic (Make a link)</td>
 </tr>
 
 
@@ -100,14 +82,8 @@ You can use the key bindings and the functions below.
 
 
 <tr>
-<td class="org-left">C-c C-left</td>
+<td class="org-left">C-c C-LEFT</td>
 <td class="org-left">Go back to previous page</td>
-</tr>
-
-
-<tr>
-<td class="org-left">C-c C-e h H/h/o</td>
-<td class="org-left">Export current-buffer's org-file to HTML-file</td>
 </tr>
 
 
@@ -124,6 +100,12 @@ You can use the key bindings and the functions below.
 
 
 <tr>
+<td class="org-left">C-c C-e h H/h/o</td>
+<td class="org-left">Export current-buffer's org-file to HTML-file</td>
+</tr>
+
+
+<tr>
 <td class="org-left">C-c x</td>
 <td class="org-left">Export all modified and newly created org-files to HTML-files</td>
 </tr>
@@ -132,6 +114,24 @@ You can use the key bindings and the functions below.
 <tr>
 <td class="org-left">C-c e</td>
 <td class="org-left">Close blog-mode</td>
+</tr>
+
+
+<tr>
+<td class="org-left">M-LEFT or M-RIGHT</td>
+<td class="org-left">Change the heading level</td>
+</tr>
+
+
+<tr>
+<td class="org-left">M-UP or M-DOWN</td>
+<td class="org-left">Rearrange the list</td>
+</tr>
+
+
+<tr>
+<td class="org-left">C-c C-l</td>
+<td class="org-left">Insert a stored-link</td>
 </tr>
 
 
@@ -156,12 +156,6 @@ You can use the key bindings and the functions below.
 <tr>
 <td class="org-left">C-c '</td>
 <td class="org-left">Edit a source code block</td>
-</tr>
-
-
-<tr>
-<td class="org-left">C-c C-c</td>
-<td class="org-left">Execute a source code block</td>
 </tr>
 
 
