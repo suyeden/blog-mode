@@ -155,7 +155,7 @@ You can use the key bindings and the functions below.
 
 <tr>
 <td class="org-left">C-c '</td>
-<td class="org-left">Edit a source code block</td>
+<td class="org-left">Edit the current code block</td>
 </tr>
 
 
@@ -167,7 +167,7 @@ You can use the key bindings and the functions below.
 
 <tr>
 <td class="org-left">C-c M-s</td>
-<td class="org-left">Insert space at the beginning of the line within the region</td>
+<td class="org-left">Insert spaces at the beginning of each line within the region</td>
 </tr>
 
 
