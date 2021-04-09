@@ -589,12 +589,12 @@
   (get-buffer-create "*blog-help*")
   (switch-to-buffer "*blog-help*")
   (if (string= "t" (format "%s" buffer-read-only))
-      (toggle-read-only)
+      (setq buffer-read-only nil)
     nil)
   (delete-region (point-min) (point-max))
   (insert " C-c M-r : Restart blog-mode (Refresh blog-mode)\n M-RET : Insert a new heading\n C-c n : Make a new topic (Make a link)\n C-c C-o : Open the topic (Jump to the link destination)\n C-c C-LEFT : Go back to previous page\n C-c r : Rename the topic (Rename the link and the linked file)\n C-M-d : Delete the topic (Delete the link and the linked file)\n C-c C-e h H/h/o : Export current-buffer's org-file to HTML-file\n C-c x : Export all modified and newly created org-files to HTML-files\n C-c e : Close blog-mode\n M-LEFT or M-RIGHT : Change the heading level\n M-UP or M-DOWN : Rearrange the list\n C-c C-l : Insert a stored-link\n\n S-TAB or C-u C-i : Fold all subtrees up to their root level\n TAB or C-i : Fold the current subtree up to its root level\n C-c C-, : Insert a code block\n C-c ' : Edit a source code block\n C-M-i : Display a list of supported languages in the source code block\n C-c M-s : Insert space at the beginning of the line within the region\n C-j : Start a new line considering leading whitespace\n C-c C-n/p : Move to next/previous heading\n\n----------------------------------------------------------------------\n < Syntax note >\n\n - : a list without number\n 1. : a list with number\n (C-c C-c : Renumber the list)\n (C-c - : Change the format of the list)\n\n *bold*\n /italic/\n _underline_\n +strikethrough+\n ~inline code~\n ----- : horizontal rule")
   (goto-char (point-min))
-  (toggle-read-only)
+  (setq buffer-read-only t)
   (catch 'help-quit-flag
     (while t
       (read-from-minibuffer "Scroll Up (n), Scroll Down (p), Quit (q) : " nil blog-help-map)
