@@ -1,7 +1,7 @@
 ;;;; -*- Emacs-Lisp -*-
 ;;;; blog-mode written by suyeden
 
-(define-key global-map "\C-cb" 'start-blog)
+(define-key global-map "\C-cb" 'blog-start)
 
 ;;; keymap
 (defvar org-mode-map (make-keymap))
@@ -19,11 +19,19 @@
 (define-key global-map "\C-c\M-r" 'blog-restart)
 
 ;;; blog-mode の有効無効判断のためのフラグ
-(defvar is-blog-mode-enabled nil)
+(defvar is-blog-mode-enabled)
 ;;; 開いたブログ名を格納するリスト
-(defvar blog-open-list nil)
-;;; ブログの記述言語を記録
-(defvar blog-lang nil)
+(defvar blog-open-list)
+;;; ブログの記述言語を記録する変数
+(defvar blog-lang)
+;;; (HTML エクスポート時に出力される) Validate 関連の変数
+(defvar org-export-html-validation-link)
+(defvar org-html-validation-link)
+;;; Validate 関連の2変数の初期値を記録するための変数
+(defvar blog-oehvl)
+(defvar blog-ohvl)
+;;; org-open-at-point の際に参照する変数
+(defvar org-link-frame-setup)
 
 ;;; blog-mode (my new major-mode)
 (defun blog-mode ()
@@ -48,14 +56,10 @@
   ;; という理由のため、blog-mode が有効になったこのタイミングで設定する  
   (local-set-key (kbd "C-c <C-left>") 'blog-back-page))
 
-(defun start-blog ()
+(defun blog-start ()
   "blog-modeを開く"
   (interactive)
-  ;; HTML エクスポートの際に "Validate" の出力を行わないようにする
-  (defvar org-export-html-validation-link nil)
-  (defvar org-html-validation-link nil) ; org version 8.0 以降向け
-  ;;
-  (if (string= "nil" (format "%s" blog-open-list))
+  (if (not (boundp 'blog-open-list))
       (progn
         (setq is-blog-mode-enabled nil)
         (setq blog-lang nil)
@@ -101,7 +105,26 @@
           (save-buffer)
           (kill-buffer (current-buffer)))
         (blog-mode)
-        (setq blog-open-list (cons "index.org" blog-open-list))
+        (setq blog-open-list (cons "index.org" nil))
+        ;; Validate 関連の2変数の初期値を調べる
+        ;; execute-kbd-macro を実行したいため、blog-mode を読み込んだこのタイミングで行う
+        (if (file-exists-p "~/org/blog/index.html")
+            (rename-file "~/org/blog/index.html" "~/org/blog/index.html~")
+          nil)
+        (execute-kbd-macro (symbol-function 'auto-export-to-html))
+        (if (boundp 'org-export-html-validation-link)
+            (setq blog-oehvl org-export-html-validation-link)
+          nil)
+        (if (boundp 'org-html-validation-link)
+            (setq blog-ohvl org-html-validation-link)
+          nil)
+        (delete-file "~/org/blog/index.html")
+        (if (file-exists-p "~/org/blog/index.html~")
+            (rename-file "~/org/blog/index.html~" "~/org/blog/index.html")
+          nil)
+        ;; HTML エクスポートの際に "Validate" の出力を行わないようにする
+        (setq org-export-html-validation-link nil)
+        (setq org-html-validation-link nil)
         (message "Hello!"))
     (message "blog-mode has already been started!")))
 
@@ -517,16 +540,26 @@
                   nil)
                 (kill-buffer "*Caution*"))
             nil)
-          (setq blog-open-list nil)
-          (makunbound 'org-export-html-validation-link)
-          (makunbound 'org-html-validation-link)
+          (makunbound 'blog-open-list)
+          (if (boundp 'blog-oehvl)
+              (progn
+                (setq org-export-html-validation-link blog-oehvl)
+                (makunbound 'blog-oehvl))
+            (makunbound 'org-export-html-validation-link)
+            (makunbound 'blog-oehvl))
+          (if (boundp 'blog-ohvl)
+              (progn
+                (setq org-html-validation-link blog-ohvl)
+                (makunbound 'blog-ohvl))
+            (makunbound 'org-html-validation-link)
+            (makunbound 'blog-ohvl))
           (message "Bye!"))
       (message "Process killed"))))
 
 (defun blog-restart ()
   "blog-mode が一時的に保持している情報を破棄して起動し直す"
   (interactive)
-  (if (not (string= "nil" (format "%s" blog-open-list)))
+  (if (boundp 'blog-open-list)
       (if (y-or-n-p "Do you really want to restart blog-mode ?")
           (progn
             (while blog-open-list
@@ -537,21 +570,33 @@
                     (kill-buffer (current-buffer)))
                 nil)
               (setq blog-open-list (cdr blog-open-list)))
-            (setq blog-open-list nil)
-            (start-blog))
+            (makunbound 'blog-open-list)
+            (if (boundp 'blog-oehvl)
+                (progn
+                  (setq org-export-html-validation-link blog-oehvl)
+                  (makunbound 'blog-oehvl))
+              (makunbound 'org-export-html-validation-link)
+              (makunbound 'blog-oehvl))
+            (if (boundp 'blog-ohvl)
+                (progn
+                  (setq org-html-validation-link blog-ohvl)
+                  (makunbound 'blog-ohvl))
+              (makunbound 'org-html-validation-link)
+              (makunbound 'blog-ohvl))
+            (blog-start))
         (message "Process killed"))
-    (start-blog)))
+    (blog-start)))
 
 ;;; blog-help における mini-buffer 用のキーマップ
-;; keymap
+;;; keymap
 (defvar blog-help-map (make-keymap))
-;; define-key
+;;; define-key
 (define-key blog-help-map "n" 'blog-help-next)
 (define-key blog-help-map "p" 'blog-help-previous)
 (define-key blog-help-map "q" 'blog-help-quit)
 (suppress-keymap blog-help-map)
-;; blog-help から抜けるためのフラグ
-(defvar blog-help-flag nil)
+;;; blog-help から抜けるためのフラグ
+(defvar blog-help-flag)
 ;;
 (defun blog-help-next ()
   "*blog-help* バッファをスクロールアップする"
@@ -585,7 +630,6 @@
   "利用できるキーバインドを表示"
   ;; blog-help内のループ と mini-bufferからの脱出 の2つを意識する
   (interactive)
-  (setq blog-help-flag nil)
   (get-buffer-create "*blog-help*")
   (switch-to-buffer "*blog-help*")
   (if (string= "t" (format "%s" buffer-read-only))
@@ -598,9 +642,10 @@
   (catch 'help-quit-flag
     (while t
       (read-from-minibuffer "Scroll Up (n), Scroll Down (p), Quit (q) : " nil blog-help-map)
-      (if (string= "t" (format "%s" blog-help-flag))
+      (if (boundp 'blog-help-flag)
           (progn
             (kill-buffer "*blog-help*")
+            (makunbound 'blog-help-flag)
             (throw 'help-quit-flag t))
         nil))))
 
