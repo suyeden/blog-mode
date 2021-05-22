@@ -307,8 +307,7 @@
   (let (space-count (blog-region-end (make-marker)) (blog-current-point (make-marker)))
     (if (use-region-p)
         (progn
-          (setq space-count (read-string "How many spaces ? : "))
-          (setq space-count (string-to-number space-count))
+          (setq space-count (string-to-number (read-string "How many spaces ? : ")))
           (set-marker blog-region-end (region-end))
           (set-marker blog-current-point (point))
           (catch 'blog-insert-space-finish
